@@ -31,6 +31,8 @@ h3{font-size:14px;color:var(--dim);font-weight:600;margin:18px 0 4px;letter-spac
 .signal.live i{background:var(--glow)}
 .clock{font-family:"Courier New",monospace;font-size:54px;text-align:center;color:var(--glow);margin:10px 0 0;letter-spacing:.04em;text-shadow:0 0 12px #ffb84d55}
 .clock.idle{color:#5a4630;text-shadow:none}
+.clock.flash{animation:flash .9s ease-out}
+@keyframes flash{0%{color:#fff;text-shadow:0 0 30px #fff,0 0 60px var(--glow);transform:scale(1.15)}100%{transform:scale(1)}}
 .bar{height:6px;background:#3a2b1f;border-radius:3px;overflow:hidden;margin-top:6px}
 .bar i{display:block;height:100%;width:0;background:var(--brass)}
 .controls{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
@@ -132,8 +134,9 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
   <div class="msg" id="msg"></div>
 
   <div class="hint">The clock starts when the song comes in. Hit “Name it” (or space) the moment you know it.<br>
-  Faster = more points: 1000 at 0s, down to 100 at 15s. Clips are Deezer’s 30-second previews.<br>
-  solo v1 · Nov 23, 2026</div>
+  Points halve every 2.5s you listen (2,000 at 0s). Then pick within 1.5s for full credit — the bar drains for 4s.<br>
+  Wrong or too slow: −500. Correct under 2s with a quick pick = ⚡ Lightning. Clips are Deezer’s 30-second previews.<br>
+  solo v2 · scoring rework · Nov 23, 2026</div>
 </div>
 
 <script>
@@ -145,6 +148,15 @@ const MAX_LISTEN = 15;     // seconds before the clock runs out
 const STATIC_SEC = 1.4;    // static before each song
 const CHOICES = 5;
 
+// Scoring (v2): speed is everything, but it has to be real recognition.
+const MAX_PTS = 2000;      // points for an instant answer
+const HALF_LIFE = 2.5;     // every 2.5s of listening halves the points
+const MIN_PTS = 25;        // floor for a correct answer
+const PICK_FULL = 1.5;     // pick within 1.5s of stopping = full points ("verified")
+const PICK_LIMIT = 4;      // after 4s of picking, it counts as a miss
+const WRONG = -500;        // wrong pick or too slow to pick
+const LIGHTNING = 2;       // verified correct under 2s = ⚡
+
 const STATIONS = [
   ['60s', '60s hits'], ['70s', '70s hits'], ['80s', '80s hits'], ['90s', '90s hits'],
   ['2000s', '2000s hits'], ['2010s', '2010s hits'], ['Classic rock', 'classic rock'],
@@ -155,6 +167,7 @@ let tracks = [], idx = 0, stationName = '';
 let state = 'idle'; // idle → scanning → listening → answering → revealed → … → done
 let sweepId = 0, current = null, nextPrep = null;
 let t0 = 0, elapsed = 0, tickRaf = 0, limitTimer = 0, replayTimer = 0;
+let pickT0 = 0, pickRaf = 0, pickTimer = 0, choiceTimeUp = false;
 let songN = 0, rightN = 0, total = 0, results = [];
 
 /* ---------- Deezer via JSONP ---------- */
@@ -373,7 +386,7 @@ function showChoices(timeUp) {
 
   const box = $('choices'); box.innerHTML = '';
   const q = document.createElement('div'); q.className = 'q';
-  q.textContent = timeUp ? 'Time’s up — still worth 50 if you get it:' : 'What was it?';
+  q.textContent = timeUp ? 'Time’s up — pick fast:' : 'What was it? Pick fast — the bar is draining.';
   box.appendChild(q);
   options.forEach(t => {
     const b = document.createElement('button');
@@ -381,31 +394,61 @@ function showChoices(timeUp) {
     b.innerHTML = '<span></span><br><small></small>';
     b.querySelector('span').textContent = t.title;
     b.querySelector('small').textContent = t.artist.name;
-    b.onclick = () => answer(t, b, timeUp);
+    b.onclick = () => answer(t, b);
     b._track = t;
     box.appendChild(b);
   });
   box.classList.add('show');
+
+  // The pick clock: stopping the song doesn't buy free thinking time.
+  choiceTimeUp = timeUp;
+  pickT0 = performance.now();
+  $('barFill').style.background = 'var(--red)';
+  const drain = () => {
+    const p = (performance.now() - pickT0) / 1000;
+    $('barFill').style.width = Math.max(0, 100 - p / PICK_LIMIT * 100) + '%';
+    if (state === 'answering') pickRaf = requestAnimationFrame(drain);
+  };
+  drain();
+  pickTimer = setTimeout(() => answer(null, null), PICK_LIMIT * 1000);
 }
 
-function answer(pick, btn, timeUp) {
+// Listening time → points: 2000 × ½^(seconds ÷ 2.5)
+function speedPoints(sec) { return Math.max(MIN_PTS, Math.round(MAX_PTS * Math.pow(0.5, sec / HALF_LIFE))); }
+// Picking time → multiplier: ×1 up to 1.5s, sliding to ×0.5 at 4s
+function pickMult(sec) {
+  if (sec <= PICK_FULL) return 1;
+  return Math.max(0.5, 1 - 0.5 * (sec - PICK_FULL) / (PICK_LIMIT - PICK_FULL));
+}
+
+function answer(pick, btn) {
   if (state !== 'answering') return;
-  const right = current.track, ok = pick.id === right.id;
-  const pts = !ok ? 0 : timeUp ? 50 : Math.max(100, Math.round(1000 - elapsed * 60));
+  cancelAnimationFrame(pickRaf); clearTimeout(pickTimer);
+  const timeUp = choiceTimeUp;
+  const pickTime = Math.min(PICK_LIMIT, (performance.now() - pickT0) / 1000);
+  const right = current.track, ok = !!pick && pick.id === right.id;
+  const mult = pickMult(pickTime);
+  const pts = ok ? Math.round((timeUp ? MIN_PTS : speedPoints(elapsed)) * mult) : WRONG;
+  const lightning = ok && !timeUp && elapsed < LIGHTNING && pickTime <= PICK_FULL;
   total += pts; if (ok) rightN++;
-  results.push({ ok, elapsed, timeUp, pts, track: right });
+  results.push({ ok, elapsed, timeUp, pts, pickTime, lightning, track: right });
   updScore();
 
   document.querySelectorAll('.choice').forEach(b => {
     b.disabled = true;
     if (b._track.id === right.id) b.classList.add('right');
   });
-  if (!ok) btn.classList.add('wrong');
+  if (btn && !ok) btn.classList.add('wrong');
 
-  $('rVerdict').textContent = ok
-    ? (timeUp ? '✓ Got it (after the buzzer) · +50' : '✓ ' + elapsed.toFixed(1) + 's · +' + pts)
-    : '✗ Not that one';
-  $('rVerdict').style.color = ok ? '#7fe08f' : '#ff8a7a';
+  const slow = mult < 1 ? ' (slow pick ×' + mult.toFixed(2) + ')' : '';
+  $('rVerdict').textContent =
+    lightning ? '⚡ LIGHTNING · ' + elapsed.toFixed(1) + 's · +' + pts.toLocaleString()
+    : ok && timeUp ? '✓ After the buzzer · +' + pts + slow
+    : ok ? '✓ ' + elapsed.toFixed(1) + 's · +' + pts.toLocaleString() + slow
+    : !pick ? '⏱ Too slow to pick · ' + WRONG
+    : '✗ Not that one · ' + WRONG;
+  $('rVerdict').style.color = lightning ? 'var(--glow)' : ok ? '#7fe08f' : '#ff8a7a';
+  if (lightning) { $('clock').classList.remove('flash'); void $('clock').offsetWidth; $('clock').classList.add('flash'); }
   $('rTitle').textContent = right.title;
   $('rArtist').textContent = right.artist.name;
   const album = right.album ? right.album.title : '';
@@ -434,6 +477,7 @@ function replay() {
 function resetRound() {
   sweepId++; pauseAll(); noiseTo(0, 0.1);
   cancelAnimationFrame(tickRaf); clearTimeout(limitTimer); clearTimeout(replayTimer);
+  cancelAnimationFrame(pickRaf); clearTimeout(pickTimer);
   songN = 0; rightN = 0; total = 0; results = [];
   updScore(); hide('choices'); hide('reveal'); hide('summary');
   setClock(0, true); setLive(false);
@@ -448,15 +492,19 @@ function startRound() {
 }
 function emoji(r) {
   if (!r.ok) return '🟥';
+  if (r.lightning) return '⚡';
   if (r.timeUp) return '⬜';
-  return r.elapsed < 3 ? '🟩' : r.elapsed < 8 ? '🟨' : '🟧';
+  return r.elapsed < 4 ? '🟩' : r.elapsed < 8 ? '🟨' : '🟧';
 }
 function showSummary() {
   pauseAll(); clearTimeout(replayTimer);
   hide('choices'); hide('reveal');
   setState('done'); status('Round over');
   $('sGrid').textContent = results.map(emoji).join('');
-  $('sTotal').textContent = total.toLocaleString() + ' pts · ' + rightN + '/' + ROUND_LEN;
+  const bolts = results.filter(r => r.lightning).length;
+  const fastest = results.filter(r => r.ok && !r.timeUp).reduce((m, r) => Math.min(m, r.elapsed), Infinity);
+  $('sTotal').textContent = total.toLocaleString() + ' pts · ' + rightN + '/' + ROUND_LEN +
+    (bolts ? ' · ⚡×' + bolts : '') + (isFinite(fastest) ? ' · fastest ' + fastest.toFixed(1) + 's' : '');
   const list = $('sList'); list.innerHTML = '';
   results.forEach(r => {
     const d = document.createElement('div');
@@ -468,8 +516,10 @@ function showSummary() {
   show('summary');
 }
 function shareText() {
+  const fastest = results.filter(r => r.ok && !r.timeUp).reduce((m, r) => Math.min(m, r.elapsed), Infinity);
   return '📻 Radio Dial · ' + stationName + '\n' + results.map(emoji).join('') +
-    '\n' + rightN + '/' + ROUND_LEN + ' · ' + total.toLocaleString() + ' pts';
+    '\n' + rightN + '/' + ROUND_LEN + ' · ' + total.toLocaleString() + ' pts' +
+    (isFinite(fastest) ? ' · fastest ' + fastest.toFixed(1) + 's' : '');
 }
 
 /* ---------- The one big button changes job with the state ---------- */
@@ -480,7 +530,7 @@ function setState(s) {
     idle: ['▶ Power on', false, ''],
     scanning: ['… tuning', true, 'stop'],
     listening: ['✋ Name it! (space)', false, 'stop'],
-    answering: ['Pick an answer ↓', true, ''],
+    answering: ['Pick fast ↓', true, ''],
     revealed: ['Next station ▶ (space)', false, ''],
     lastReveal: ['See results ▶ (space)', false, ''],
     done: ['▶ Play again', false, '']
@@ -507,6 +557,7 @@ const pos = f => (f - 87.5) / 21 * 100;
 function setClock(sec, idle) {
   $('clock').textContent = sec.toFixed(1);
   $('clock').classList.toggle('idle', idle);
+  $('barFill').style.background = '';
   $('barFill').style.width = (idle ? 0 : Math.min(100, sec / MAX_LISTEN * 100)) + '%';
 }
 function status(s) { $('status').textContent = s; }

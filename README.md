@@ -7,7 +7,14 @@ A name-that-tune game in a single web page. A radio dial sweeps through static a
 ## Two versions
 
 - **Party** (`index.html`): one phone acts as the radio, people shout answers, and whoever holds the phone stops the dial.
-- **Solo** (`solo.html`, at https://dblicken.github.io/radio-dial/solo.html): a round of 10 songs for one player. Each song plays and a clock runs. Tap **Name it** when you know it, then pick from 5 choices. Faster answers score more (1000 points at 0s, down to 100 at 15s; 50 if the clock runs out). At the end you get a Wordle-style result to copy: 🟩 under 3s · 🟨 under 8s · 🟧 slower · ⬜ after the buzzer · 🟥 wrong.
+- **Solo** (`solo.html`, at https://dblicken.github.io/radio-dial/solo.html): a round of 10 songs for one player. Each song plays and a clock runs. Tap **Name it** when you know it, then pick from 5 choices. At the end you get a Wordle-style result to copy: ⚡ Lightning · 🟩 under 4s · 🟨 under 8s · 🟧 slower · ⬜ after the buzzer · 🟥 wrong.
+
+### Solo scoring (v2): fast *and* real
+
+- **Listening time sets the points:** 2000 × ½^(seconds ÷ 2.5). That works out to 1,741 at 0.5s, 1,434 at 1.2s, 1,149 at 2s, 500 at 5s and 125 at 10s. Because the points halve every 2.5 seconds, the first seconds are worth far more than the later ones.
+- **Picking time verifies it:** after you stop, a red bar drains for 4 seconds. Pick within 1.5s for full points. After that the points slide down to ×0.5, and if the bar runs out it counts as a miss. Stopping early and then reading the choices at leisure no longer pays.
+- **Wrong or too slow costs −500.** Stopping at once and guessing at random now loses points on average: 20% × ~1,850 − 80% × 500 ≈ −30.
+- **⚡ Lightning:** correct in under 2s with a pick under 1.5s.
 
 The wrong answers come from the same station, so they're from the same era and genre. Where possible they're also by different artists, so you can't just spot the one artist that doesn't fit.
 
