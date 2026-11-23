@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#1b1410">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Radio Dial">
+<title>Radio Dial — Name That Tune</title>
+<style>
+:root{--bg:#1b1410;--brass:#d9a441;--glow:#ffcf6b;--text:#f3e6d0;--dim:#a8957a;--red:#c0261d}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(circle at 50% 0,#3a2a1e,var(--bg) 70%);color:var(--text);min-height:100vh;display:flex;justify-content:center;padding:20px}
+.wrap{width:100%;max-width:720px}
+h1{font-family:Georgia,serif;font-weight:normal;letter-spacing:.2em;text-align:center;color:var(--brass);margin:4px 0 16px}
+h3{font-size:14px;color:var(--dim);font-weight:600;margin:18px 0 4px;letter-spacing:.05em;text-transform:uppercase}
+.radio{background:linear-gradient(#3b2b20,#251b14);border:2px solid #4a3828;border-radius:18px;padding:18px;box-shadow:0 10px 40px #000a,inset 0 1px 0 #ffffff14}
+.dial{position:relative;height:90px;background:linear-gradient(#c9b48a,#b39a68);border-radius:10px;overflow:hidden;box-shadow:inset 0 0 18px #5a4020;transition:background .4s,box-shadow .4s}
+.dial.on{background:linear-gradient(#ffe9b8,#f2cf8a);box-shadow:inset 0 0 30px #ffb84d,0 0 18px #ffb84d55}
+.scale{position:absolute;inset:0}
+.tick{position:absolute;bottom:0;width:1px;background:#5a3f1c}
+.lbl{position:absolute;top:10px;transform:translateX(-50%);font:600 13px Georgia,serif;color:#5a3f1c}
+.needle{position:absolute;top:0;bottom:0;width:3px;margin-left:-1px;background:var(--red);box-shadow:0 0 6px var(--red);left:50%;transition:left .9s cubic-bezier(.4,.1,.3,1)}
+.readout{display:flex;justify-content:space-between;align-items:center;margin:12px 2px 0;font-family:"Courier New",monospace;color:var(--glow);gap:10px}
+.freq{font-size:28px;letter-spacing:.05em}
+.status{font-size:14px;color:var(--dim);text-align:center;flex:1}
+.signal{display:flex;gap:3px;align-items:flex-end;height:20px}
+.signal i{width:5px;background:#5a4630;border-radius:1px;transition:background .15s}
+.signal.live i{background:var(--glow)}
+.controls{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;font:inherit;border:0;border-radius:10px;padding:12px 16px;cursor:pointer;background:#4a3828;color:var(--text)}
+button:hover:not(:disabled){filter:brightness(1.15)}
+button:disabled{opacity:.4;cursor:default}
+.big{flex:1;font-size:18px;padding:16px;background:var(--brass);color:#2a1a08;font-weight:700;min-width:200px}
+.stop{background:var(--red);color:#fff}
+.stations{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.chip{padding:8px 12px;border-radius:20px;background:#3a2b1f;font-size:14px}
+.chip.sel{background:var(--brass);color:#2a1a08}
+.row{display:flex;gap:8px;margin-top:8px}
+input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px solid #4a3828;background:#1e1610;color:var(--text);font:inherit}
+.settings{display:grid;grid-template-columns:auto 1fr 3em;gap:6px 10px;align-items:center;font-size:14px;color:var(--dim);margin-top:14px}
+.reveal{display:none;margin-top:16px;background:#1e1610;border:1px solid #4a3828;border-radius:14px;padding:14px;gap:14px;align-items:center}
+.reveal.show{display:flex}
+.reveal img{width:96px;height:96px;border-radius:8px;object-fit:cover;background:#333;flex:none}
+.reveal .t{font-size:20px;font-weight:700}
+.reveal .a{color:var(--glow)}
+.reveal .m{color:var(--dim);font-size:14px;margin-top:2px}
+.reveal .row{flex-wrap:wrap}
+.ok{background:#2f6b3a}.no{background:#6b2f2f}
+.score{display:flex;justify-content:space-between;margin-top:14px;font-size:15px;color:var(--dim)}
+.score b{color:var(--text)}
+.log{font-size:14px;color:var(--dim);max-height:200px;overflow:auto}
+.log div{padding:4px 0;border-bottom:1px solid #2e241b}
+.log span{color:var(--text)}
+.msg{margin-top:10px;font-size:14px;color:#ff9b7a;min-height:1em}
+.hint{font-size:13px;color:var(--dim);text-align:center;margin:16px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>RADIO DIAL</h1>
+
+  <div class="radio">
+    <div class="dial" id="dial"><div class="scale" id="scale"></div><div class="needle" id="needle"></div></div>
+    <div class="readout">
+      <div class="freq" id="freq">FM 98.1</div>
+      <div class="status" id="status">Loading…</div>
+      <div class="signal" id="signal"><i style="height:6px"></i><i style="height:10px"></i><i style="height:14px"></i><i style="height:19px"></i></div>
+    </div>
+
+    <div class="controls">
+      <button class="big" id="power" disabled>▶ Power on</button>
+      <button class="big stop" id="gotit" disabled>✋ Got it! <small>(space)</small></button>
+    </div>
+
+    <div class="reveal" id="reveal">
+      <img id="cover" alt="">
+      <div style="flex:1;min-width:0">
+        <div class="t" id="rTitle"></div>
+        <div class="a" id="rArtist"></div>
+        <div class="m" id="rMeta"></div>
+        <div class="row">
+          <button id="replay">↻ Replay clip</button>
+          <button class="ok" id="right">✓ Got it right</button>
+          <button class="no" id="wrong">✗ Wrong</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="score">
+      <span>Points: <b id="pts">0</b></span>
+      <span>Heard: <b id="heard">0</b></span>
+      <span>Slipped by: <b id="missedN">0</b></span>
+    </div>
+  </div>
+
+  <h3>Station</h3>
+  <div class="stations" id="stations"></div>
+  <div class="row">
+    <input type="text" id="custom" placeholder="Or tune to any playlist search: motown, grunge, yacht rock…">
+    <button id="tune">Tune</button>
+  </div>
+
+  <div class="settings">
+    <label for="snip">Clip length</label><input type="range" id="snip" min="1" max="6" step="0.5" value="3"><span id="snipV">3s</span>
+    <label for="stat">Static between</label><input type="range" id="stat" min="0.4" max="3" step="0.2" value="1.2"><span id="statV">1.2s</span>
+  </div>
+  <div class="msg" id="msg"></div>
+
+  <h3>Slipped by</h3>
+  <div class="log" id="log"></div>
+
+  <div class="hint">Hit “Got it” (or space) the moment someone names the song. Clips are Deezer’s 30-second previews.<br>v2 · phone-ready · Nov 23, 2026</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const snipSec = () => parseFloat($('snip').value);
+const statSec = () => parseFloat($('stat').value);
+
+const STATIONS = [
+  ['60s', '60s hits'], ['70s', '70s hits'], ['80s', '80s hits'], ['90s', '90s hits'],
+  ['2000s', '2000s hits'], ['2010s', '2010s hits'], ['Classic rock', 'classic rock'],
+  ['One-hit wonders', 'one hit wonders'], ['Today’s chart', '__chart']
+];
+
+let tracks = [], idx = 0, running = false, sweepId = 0;
+let current = null, nextPrep = null, replayTimer = null;
+let points = 0, heard = 0, missed = 0;
+
+/* ---------- Two reusable audio players ----------
+   iPhones only let a page start sound in direct response to a tap. So we make
+   two players up front, "unlock" them on the Power tap by playing a tiny bit of
+   silence, then just swap each new song into them (alternating A, B, A, B…). */
+const players = [new Audio(), new Audio()];
+players.forEach(p => { p.preload = 'auto'; p.playsInline = true; });
+let playerTurn = 0, unlocked = false, unlockDone = Promise.resolve();
+const SILENCE = makeSilence();
+
+function makeSilence() {
+  // A 0.1-second WAV file built by hand: 44-byte header + 800 bytes of silence.
+  const rate = 8000, n = 800, buf = new ArrayBuffer(44 + n), v = new DataView(buf);
+  const str = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  str(0, 'RIFF'); v.setUint32(4, 36 + n, true); str(8, 'WAVE'); str(12, 'fmt ');
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate, true);
+  v.setUint16(32, 1, true); v.setUint16(34, 8, true);
+  str(36, 'data'); v.setUint32(40, n, true);
+  for (let i = 0; i < n; i++) v.setUint8(44 + i, 128); // in 8-bit audio, 128 is silence
+  return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+}
+function unlockPlayers() {
+  if (unlocked) return;
+  unlocked = true;
+  unlockDone = Promise.allSettled(players.map(p => {
+    p.src = SILENCE;
+    return p.play().then(() => p.pause());
+  }));
+}
+function pauseAll() { players.forEach(p => p.pause()); }
+
+// iPhones ignore volume changes from a web page. Test once, and skip fades if so.
+const canFade = (() => { const a = new Audio(); a.volume = 0.5; return a.volume === 0.5; })();
+const once = (el, ev, ms) => new Promise(r => {
+  const t = setTimeout(r, ms);
+  el.addEventListener(ev, () => { clearTimeout(t); r(); }, { once: true });
+});
+
+/* ---------- Deezer via JSONP (no key, no CORS issues) ---------- */
+function jsonp(url) {
+  return new Promise((resolve, reject) => {
+    const cb = 'dz' + Math.random().toString(36).slice(2);
+    const s = document.createElement('script');
+    const timer = setTimeout(() => { cleanup(); reject(new Error('timed out')); }, 10000);
+    function cleanup() { clearTimeout(timer); delete window[cb]; s.remove(); }
+    window[cb] = d => { cleanup(); (d && d.error) ? reject(new Error(d.error.message || 'API error')) : resolve(d); };
+    s.onerror = () => { cleanup(); reject(new Error('network error')); };
+    s.src = url + (url.includes('?') ? '&' : '?') + 'output=jsonp&callback=' + cb;
+    document.head.appendChild(s);
+  });
+}
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+
+async function loadStation(label, q) {
+  const wasOn = running || $('dial').classList.contains('on');
+  powerOff();
+  setMsg(''); status('Tuning to ' + label + '…');
+  $('power').disabled = true;
+  try {
+    let list;
+    if (q === '__chart') {
+      list = (await jsonp('https://api.deezer.com/chart/0/tracks?limit=100')).data;
+    } else {
+      const p = await jsonp('https://api.deezer.com/search/playlist?q=' + encodeURIComponent(q));
+      if (!p.data || !p.data.length) throw new Error('no playlists found for “' + q + '”');
+      const pick = p.data[Math.floor(Math.random() * Math.min(3, p.data.length))];
+      list = (await jsonp('https://api.deezer.com/playlist/' + pick.id + '/tracks?limit=200')).data;
+    }
+    const fresh = shuffle((list || []).filter(t => t.preview && t.readable !== false));
+    if (fresh.length < 5) throw new Error('not enough playable songs — try another station');
+    tracks = fresh; idx = 0;
+    pauseAll(); nextPrep = null; current = null;
+    status(label + ' · ' + tracks.length + ' songs');
+    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('sel', c.dataset.label === label));
+    $('power').disabled = false;
+    if (wasOn) powerOn();
+  } catch (e) {
+    setMsg('Couldn’t tune in: ' + e.message);
+    status('No signal');
+    $('power').disabled = !tracks.length;
+  }
+}
+
+function nextTrack() {
+  if (idx >= tracks.length) { shuffle(tracks); idx = 0; }
+  return tracks[idx++];
+}
+
+/* ---------- Static, generated in the browser ---------- */
+let ctx, noiseGain, bp;
+function initAudio() {
+  if (ctx) { ctx.resume(); return; }
+  // Let generated sound play even when the iPhone's silent switch is on
+  // (song clips already do; the static wouldn't without this).
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const len = ctx.sampleRate * 2;
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (Math.random() < 0.002 ? 2.5 : 0.7);
+  const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+  bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2200; bp.Q.value = 0.7;
+  noiseGain = ctx.createGain(); noiseGain.gain.value = 0;
+  src.connect(bp).connect(noiseGain).connect(ctx.destination);
+  src.start();
+}
+function noiseTo(v, t = 0.15) {
+  if (!ctx) return;
+  const g = noiseGain.gain, now = ctx.currentTime;
+  g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(v, now + t);
+}
+function wobble(sec) {
+  if (!ctx) return;
+  const f = bp.frequency, now = ctx.currentTime;
+  f.cancelScheduledValues(now); f.setValueAtTime(f.value, now);
+  for (let t = 0.15; t < sec; t += 0.15) f.linearRampToValueAtTime(800 + Math.random() * 3500, now + t);
+}
+
+/* ---------- Song clips ---------- */
+function randomStart(a) {
+  const maxStart = Math.max(0, Math.min((a.duration || 30) - snipSec() - 1, 24));
+  return Math.random() * maxStart;
+}
+function prepare(track) {
+  const a = players[playerTurn]; playerTurn = 1 - playerTurn;
+  // A fresh "token" per load, so leftover events from this player's previous
+  // song can't be mistaken for events about the new one.
+  const tok = a._tok = {};
+  a.pause(); a.muted = true;
+  return new Promise(resolve => {
+    let done = false;
+    const finish = (ok, start) => { if (!done) { done = true; resolve({ track, audio: a, start, ok, tok }); } };
+    a.addEventListener('loadedmetadata', () => {
+      if (a._tok !== tok || done) return;
+      const start = randomStart(a);
+      a.currentTime = start;
+      a.addEventListener('seeked', () => { if (a._tok === tok) finish(true, start); }, { once: true });
+      setTimeout(() => finish(true, start), 2500);
+    }, { once: true });
+    a.addEventListener('error', () => { if (a._tok === tok) finish(false); }, { once: true });
+    a.src = track.preview;
+    a.load();
+    // Phones (especially on cellular) often refuse to preload. If nothing has
+    // arrived after 4s, go ahead anyway and seek once it's playing (muted).
+    setTimeout(() => finish(true, null), 4000);
+  });
+}
+function fadeVol(a, to, ms) {
+  clearInterval(a._fade);
+  const from = a.volume, t0 = performance.now();
+  a._fade = setInterval(() => {
+    const k = Math.min(1, (performance.now() - t0) / ms);
+    a.volume = from + (to - from) * k;
+    if (k >= 1) clearInterval(a._fade);
+  }, 16);
+}
+
+/* ---------- The sweep loop ---------- */
+async function sweep() {
+  const id = ++sweepId;
+  const alive = () => running && id === sweepId;
+  await unlockDone;
+  if (!alive()) return;
+  if (!nextPrep) nextPrep = prepare(nextTrack());
+  while (alive()) {
+    // Static + needle moving
+    setLive(false); status('Scanning…');
+    moveNeedle(); wobble(statSec()); noiseTo(0.35, 0.08);
+    const [prep] = await Promise.all([nextPrep, sleep(statSec() * 1000)]);
+    if (!alive()) return;
+    nextPrep = prepare(nextTrack());
+    if (!prep.ok) continue;
+
+    // A station comes in
+    const a = prep.audio;
+    if (a._tok !== prep.tok) continue; // that player has since been given another song
+    a.muted = true; a.volume = canFade ? 0 : 1;
+    try { await a.play(); } catch (e) { continue; }
+    if (prep.start == null) { // couldn't preload: jump to a random spot now, still muted
+      if (a.readyState < 1) await once(a, 'loadedmetadata', 3000);
+      prep.start = randomStart(a);
+      a.currentTime = prep.start;
+      await once(a, 'seeked', 1500);
+    }
+    if (!alive()) { a.pause(); return; }
+    current = prep;
+    a.muted = false;
+    setLive(true); status('Signal!');
+    noiseTo(0.025, canFade ? 0.25 : 0.05);
+    if (canFade) fadeVol(a, 1, 250);
+    heard++; updScore();
+    await sleep(snipSec() * 1000);
+    if (!alive()) return; // stopped mid-clip
+
+    if (canFade) { fadeVol(a, 0, 200); await sleep(200); }
+    a.pause();
+    if (!alive()) return;
+    missed++; addLog(prep); updScore();
+  }
+}
+
+function moveNeedle() {
+  const f = Math.round((88 + Math.random() * 20) * 10) / 10;
+  const n = $('needle');
+  n.style.transitionDuration = Math.min(statSec() * 0.8, 1.2) + 's';
+  n.style.left = pos(f) + '%';
+  $('freq').textContent = 'FM ' + f.toFixed(1);
+}
+const pos = f => (f - 87.5) / 21 * 100;
+
+/* ---------- Controls ---------- */
+function powerOn() {
+  if (!tracks.length) return;
+  unlockPlayers(); // must happen inside the tap
+  initAudio();
+  hideReveal();
+  running = true;
+  $('dial').classList.add('on');
+  $('power').textContent = '■ Power off';
+  $('gotit').disabled = false;
+  $('gotit').innerHTML = '✋ Got it! <small>(space)</small>';
+  sweep();
+}
+function powerOff() {
+  running = false; sweepId++;
+  noiseTo(0, 0.1); setLive(false);
+  pauseAll();
+  clearTimeout(replayTimer);
+  $('dial').classList.remove('on');
+  $('power').textContent = '▶ Power on';
+  $('gotit').disabled = true;
+  hideReveal();
+  if (tracks.length) status('Off');
+}
+function gotIt() {
+  if (!running) { powerOn(); return; } // acts as Resume
+  running = false; sweepId++;
+  noiseTo(0, 0.1); setLive(false);
+  pauseAll();
+  $('gotit').innerHTML = '▶ Resume scanning <small>(space)</small>';
+  status('Stopped');
+  reveal(current);
+}
+function reveal(prep) {
+  if (!prep) { setMsg('Nothing has come in yet — keep listening.'); return; }
+  const t = prep.track;
+  if (prep.logEl) { prep.logEl.remove(); prep.logEl = null; missed--; updScore(); }
+  prep.scored = false;
+  $('rTitle').textContent = t.title;
+  $('rArtist').textContent = t.artist ? t.artist.name : '';
+  const album = t.album ? t.album.title : '';
+  $('rMeta').textContent = album;
+  $('cover').src = (t.album && t.album.cover_medium) || '';
+  $('reveal').classList.add('show');
+  jsonp('https://api.deezer.com/track/' + t.id).then(d => {
+    const y = (d.release_date || (d.album && d.album.release_date) || '').slice(0, 4);
+    if (y && y !== '0000' && current === prep) $('rMeta').textContent = album + ' · ' + y;
+  }).catch(() => {});
+}
+function hideReveal() { $('reveal').classList.remove('show'); }
+function replay() {
+  if (!current) return;
+  const a = current.audio;
+  clearTimeout(replayTimer);
+  a.currentTime = current.start || 0; a.volume = 1; a.muted = false;
+  a.play().catch(() => {});
+  replayTimer = setTimeout(() => a.pause(), snipSec() * 1000 + 1500);
+}
+function score(right) {
+  if (current && !current.scored && right) { points++; current.scored = true; updScore(); }
+  pauseAll();
+  powerOn();
+}
+
+/* ---------- UI helpers ---------- */
+function status(s) { $('status').textContent = s; }
+function setMsg(s) { $('msg').textContent = s; }
+function setLive(on) { $('signal').classList.toggle('live', on); }
+function updScore() { $('pts').textContent = points; $('heard').textContent = heard; $('missedN').textContent = missed; }
+function addLog(prep) {
+  const t = prep.track, el = document.createElement('div');
+  el.innerHTML = '<span></span> — ';
+  el.firstChild.textContent = t.title;
+  el.appendChild(document.createTextNode(t.artist ? t.artist.name : ''));
+  $('log').prepend(el);
+  prep.logEl = el;
+}
+
+function buildScale() {
+  const sc = $('scale');
+  for (let f = 88; f <= 108; f++) {
+    const t = document.createElement('div');
+    t.className = 'tick'; t.style.left = pos(f) + '%'; t.style.height = (f % 2 ? 14 : 26) + 'px';
+    sc.appendChild(t);
+    if (f % 2 === 0) {
+      const l = document.createElement('div');
+      l.className = 'lbl'; l.style.left = pos(f) + '%'; l.textContent = f;
+      sc.appendChild(l);
+    }
+  }
+  $('needle').style.left = pos(98.1) + '%';
+}
+function buildStations() {
+  STATIONS.forEach(([label, q]) => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = label; b.dataset.label = label;
+    b.onclick = () => loadStation(label, q);
+    $('stations').appendChild(b);
+  });
+}
+
+$('power').onclick = () => (running || $('dial').classList.contains('on')) ? powerOff() : powerOn();
+$('gotit').onclick = gotIt;
+$('replay').onclick = replay;
+$('right').onclick = () => score(true);
+$('wrong').onclick = () => score(false);
+$('tune').onclick = () => { const q = $('custom').value.trim(); if (q) loadStation(q, q); };
+$('custom').addEventListener('keydown', e => { if (e.key === 'Enter') $('tune').click(); });
+$('snip').oninput = () => $('snipV').textContent = snipSec() + 's';
+$('stat').oninput = () => $('statV').textContent = statSec() + 's';
+document.addEventListener('keydown', e => {
+  if (e.code !== 'Space' || e.target.tagName === 'INPUT') return;
+  e.preventDefault();
+  if (!$('gotit').disabled) gotIt();
+});
+
+buildScale();
+buildStations();
+loadStation('80s', '80s hits');
+</script>
+</body>
+</html>
