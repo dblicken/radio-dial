@@ -44,6 +44,17 @@ Everything is in `index.html`. There's no server, no build step and no API key.
 - **Silent switch:** `navigator.audioSession.type = 'playback'` lets the synthesized static play even when the ringer is off.
 - **Phones on cellular often refuse to preload audio.** If a clip hasn't loaded after 4 seconds, the game starts it muted, jumps to a random spot, then unmutes.
 
+## Original release years (`year.js`)
+
+Deezer, like Spotify, dates a song by the album it sits on. A 2015 remaster says 2015, and a 2008 soundtrack reissue says 2008. `year.js` asks **MusicBrainz**, a free community music database that tracks every release of every recording, for the song's *first* release date:
+
+1. Clean the title: "(2018 Remaster)", "- Single Version" and "(From '…' Soundtrack)" are stripped. The game shows these cleaned titles too.
+2. Search MusicBrainz for that title by that artist.
+3. Keep only results where the title and artist match after normalizing ("AC/DC" = "acdc", accents and "The" ignored), which filters out covers and similarly named songs.
+4. Take the earliest first-release year among the matches.
+
+If MusicBrainz finds nothing, the game falls back to Deezer's year and shows it greyed out with "(may be a reissue date)". Requests wait in line at about one per second, as MusicBrainz asks, and results are cached. Solo starts the lookup when the song comes in, so the year is usually ready by the time you answer.
+
 ## Turning on GitHub Pages
 
 Repo **Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: `main` / `(root)` → Save.** The site appears about a minute later. On iPhone, open it in Safari and use **Share → Add to Home Screen**.

@@ -55,6 +55,9 @@ button:disabled{opacity:.4;cursor:default}
 .reveal .v{font-weight:700;font-size:15px}
 .reveal .t{font-size:18px;font-weight:700;margin-top:2px}
 .reveal .a{color:var(--glow)}
+.reveal .y{font:700 26px 'Courier New',monospace;color:var(--glow);margin-top:4px}
+.reveal .y.unsure{color:var(--dim)}
+.reveal .y small{font:400 12px system-ui,sans-serif;color:var(--dim)}
 .reveal .m{color:var(--dim);font-size:14px;margin-top:2px}
 .score{display:flex;justify-content:space-between;margin-top:14px;font-size:15px;color:var(--dim)}
 .score b{color:var(--text)}
@@ -102,6 +105,7 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
         <div class="v" id="rVerdict"></div>
         <div class="t" id="rTitle"></div>
         <div class="a" id="rArtist"></div>
+        <div class="y" id="rYear"></div>
         <div class="m" id="rMeta"></div>
         <div class="row"><button id="replay">↻ Hear more of it</button></div>
       </div>
@@ -136,9 +140,10 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
   <div class="hint">The clock starts when the song comes in. Hit “Name it” (or space) the moment you know it.<br>
   Points halve every 2.5s you listen (2,000 at 0s). Then pick within 1.5s for full credit — the bar drains for 4s.<br>
   Wrong or too slow: −500. Correct under 2s with a quick pick = ⚡ Lightning. Clips are Deezer’s 30-second previews.<br>
-  solo v2 · scoring rework · Nov 23, 2026</div>
+  solo v3 · original release years · Nov 23, 2026</div>
 </div>
 
+<script src="year.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -340,6 +345,7 @@ async function nextSong(tries = 0) {
   if (id !== sweepId) { a.pause(); return; }
 
   current = prep; songN++; updScore();
+  RadioYear.originalYear(prep.track); // start the year lookup now, so it's ready at reveal
   a.muted = false;
   setLive(true); status('Signal!');
   noiseTo(0.02, canFade ? 0.25 : 0.05);
@@ -374,7 +380,8 @@ function showChoices(timeUp) {
   // Wrong answers come from the same station, so they're the same era/genre.
   // Prefer different artists so the choice isn't a giveaway.
   const used = new Set([right.artist.name.toLowerCase()]);
-  const pool = shuffle(tracks.filter(t => t.id !== right.id && t.title !== right.title));
+  const same = t => RadioYear.cleanTitle(t.title).toLowerCase() === RadioYear.cleanTitle(right.title).toLowerCase();
+  const pool = shuffle(tracks.filter(t => t.id !== right.id && !same(t)));
   const wrong = [];
   for (const t of pool) {
     const n = t.artist.name.toLowerCase();
@@ -392,7 +399,7 @@ function showChoices(timeUp) {
     const b = document.createElement('button');
     b.className = 'choice';
     b.innerHTML = '<span></span><br><small></small>';
-    b.querySelector('span').textContent = t.title;
+    b.querySelector('span').textContent = RadioYear.cleanTitle(t.title);
     b.querySelector('small').textContent = t.artist.name;
     b.onclick = () => answer(t, b);
     b._track = t;
@@ -449,16 +456,12 @@ function answer(pick, btn) {
     : '✗ Not that one · ' + WRONG;
   $('rVerdict').style.color = lightning ? 'var(--glow)' : ok ? '#7fe08f' : '#ff8a7a';
   if (lightning) { $('clock').classList.remove('flash'); void $('clock').offsetWidth; $('clock').classList.add('flash'); }
-  $('rTitle').textContent = right.title;
+  $('rTitle').textContent = RadioYear.cleanTitle(right.title);
   $('rArtist').textContent = right.artist.name;
-  const album = right.album ? right.album.title : '';
-  $('rMeta').textContent = album;
+  $('rMeta').textContent = right.album ? right.album.title : '';
   $('cover').src = (right.album && right.album.cover_medium) || '';
-  const prep = current;
-  jsonp('https://api.deezer.com/track/' + right.id).then(d => {
-    const y = (d.release_date || (d.album && d.album.release_date) || '').slice(0, 4);
-    if (y && y !== '0000' && current === prep) $('rMeta').textContent = album + ' · ' + y;
-  }).catch(() => {});
+  const prep = current, row = results[results.length - 1];
+  showYear(right, () => current === prep, r => { row.year = r.year; row.yearSure = r.sure; });
   show('reveal');
 
   setState(songN >= ROUND_LEN ? 'lastReveal' : 'revealed');
@@ -509,8 +512,8 @@ function showSummary() {
   results.forEach(r => {
     const d = document.createElement('div');
     d.textContent = emoji(r) + ' ' + (r.ok && !r.timeUp ? r.elapsed.toFixed(1) + 's  ' : '');
-    const s = document.createElement('span'); s.textContent = r.track.title;
-    d.appendChild(s); d.appendChild(document.createTextNode(' — ' + r.track.artist.name));
+    const s = document.createElement('span'); s.textContent = RadioYear.cleanTitle(r.track.title);
+    d.appendChild(s); d.appendChild(document.createTextNode(' — ' + r.track.artist.name + (r.year ? ' · ' + r.year + (r.yearSure ? '' : '?') : '')));
     list.appendChild(d);
   });
   show('summary');
@@ -545,6 +548,19 @@ function mainAction() {
   else if (state === 'listening') stopClock(false);
   else if (state === 'revealed') { clearTimeout(replayTimer); pauseAll(); nextSong(); }
   else if (state === 'lastReveal') showSummary();
+}
+
+// Show the ORIGINAL release year (see year.js), not the remaster/compilation year.
+function showYear(track, stillCurrent, onYear) {
+  const el = $('rYear');
+  el.className = 'y unsure'; el.textContent = '····';
+  RadioYear.originalYear(track).then(r => {
+    if (!stillCurrent()) return;
+    if (!r) { el.textContent = ''; return; }
+    el.className = r.sure ? 'y' : 'y unsure';
+    el.innerHTML = r.year + (r.sure ? '' : ' <small>(may be a reissue date)</small>');
+    if (onYear) onYear(r);
+  });
 }
 
 /* ---------- UI helpers ---------- */

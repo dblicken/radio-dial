@@ -44,6 +44,9 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
 .reveal img{width:96px;height:96px;border-radius:8px;object-fit:cover;background:#333;flex:none}
 .reveal .t{font-size:20px;font-weight:700}
 .reveal .a{color:var(--glow)}
+.reveal .y{font:700 26px 'Courier New',monospace;color:var(--glow);margin-top:4px}
+.reveal .y.unsure{color:var(--dim)}
+.reveal .y small{font:400 12px system-ui,sans-serif;color:var(--dim)}
 .reveal .m{color:var(--dim);font-size:14px;margin-top:2px}
 .reveal .row{flex-wrap:wrap}
 .ok{background:#2f6b3a}.no{background:#6b2f2f}
@@ -78,6 +81,7 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
       <div style="flex:1;min-width:0">
         <div class="t" id="rTitle"></div>
         <div class="a" id="rArtist"></div>
+        <div class="y" id="rYear"></div>
         <div class="m" id="rMeta"></div>
         <div class="row">
           <button id="replay">↻ Replay clip</button>
@@ -113,6 +117,7 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
   <div class="hint">Hit “Got it” (or space) the moment someone names the song. Clips are Deezer’s 30-second previews.<br>Playing alone? Try <a href="solo.html" style="color:var(--brass)">Radio Dial Solo</a>.<br>v2 · phone-ready · Nov 23, 2026</div>
 </div>
 
+<script src="year.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -381,16 +386,12 @@ function reveal(prep) {
   const t = prep.track;
   if (prep.logEl) { prep.logEl.remove(); prep.logEl = null; missed--; updScore(); }
   prep.scored = false;
-  $('rTitle').textContent = t.title;
+  $('rTitle').textContent = RadioYear.cleanTitle(t.title);
   $('rArtist').textContent = t.artist ? t.artist.name : '';
-  const album = t.album ? t.album.title : '';
-  $('rMeta').textContent = album;
+  $('rMeta').textContent = t.album ? t.album.title : '';
   $('cover').src = (t.album && t.album.cover_medium) || '';
   $('reveal').classList.add('show');
-  jsonp('https://api.deezer.com/track/' + t.id).then(d => {
-    const y = (d.release_date || (d.album && d.album.release_date) || '').slice(0, 4);
-    if (y && y !== '0000' && current === prep) $('rMeta').textContent = album + ' · ' + y;
-  }).catch(() => {});
+  showYear(t, () => current === prep);
 }
 function hideReveal() { $('reveal').classList.remove('show'); }
 function replay() {
@@ -407,6 +408,19 @@ function score(right) {
   powerOn();
 }
 
+// Show the ORIGINAL release year (see year.js), not the remaster/compilation year.
+function showYear(track, stillCurrent, onYear) {
+  const el = $('rYear');
+  el.className = 'y unsure'; el.textContent = '····';
+  RadioYear.originalYear(track).then(r => {
+    if (!stillCurrent()) return;
+    if (!r) { el.textContent = ''; return; }
+    el.className = r.sure ? 'y' : 'y unsure';
+    el.innerHTML = r.year + (r.sure ? '' : ' <small>(may be a reissue date)</small>');
+    if (onYear) onYear(r);
+  });
+}
+
 /* ---------- UI helpers ---------- */
 function status(s) { $('status').textContent = s; }
 function setMsg(s) { $('msg').textContent = s; }
@@ -415,7 +429,7 @@ function updScore() { $('pts').textContent = points; $('heard').textContent = he
 function addLog(prep) {
   const t = prep.track, el = document.createElement('div');
   el.innerHTML = '<span></span> — ';
-  el.firstChild.textContent = t.title;
+  el.firstChild.textContent = RadioYear.cleanTitle(t.title);
   el.appendChild(document.createTextNode(t.artist ? t.artist.name : ''));
   $('log').prepend(el);
   prep.logEl = el;
