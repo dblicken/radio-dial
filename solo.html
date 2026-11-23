@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#1b1410">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Radio Dial Solo">
+<title>Radio Dial Solo — Name It Fast</title>
+<style>
+:root{--bg:#1b1410;--brass:#d9a441;--glow:#ffcf6b;--text:#f3e6d0;--dim:#a8957a;--red:#c0261d;--green:#2f8a45}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(circle at 50% 0,#3a2a1e,var(--bg) 70%);color:var(--text);min-height:100vh;display:flex;justify-content:center;padding:20px}
+.wrap{width:100%;max-width:720px}
+h1{font-family:Georgia,serif;font-weight:normal;letter-spacing:.2em;text-align:center;color:var(--brass);margin:4px 0 4px}
+.sub{text-align:center;color:var(--dim);font-size:14px;margin-bottom:14px}
+.sub a{color:var(--dim)}
+h3{font-size:14px;color:var(--dim);font-weight:600;margin:18px 0 4px;letter-spacing:.05em;text-transform:uppercase}
+.radio{background:linear-gradient(#3b2b20,#251b14);border:2px solid #4a3828;border-radius:18px;padding:18px;box-shadow:0 10px 40px #000a,inset 0 1px 0 #ffffff14}
+.dial{position:relative;height:90px;background:linear-gradient(#c9b48a,#b39a68);border-radius:10px;overflow:hidden;box-shadow:inset 0 0 18px #5a4020;transition:background .4s,box-shadow .4s}
+.dial.on{background:linear-gradient(#ffe9b8,#f2cf8a);box-shadow:inset 0 0 30px #ffb84d,0 0 18px #ffb84d55}
+.scale{position:absolute;inset:0}
+.tick{position:absolute;bottom:0;width:1px;background:#5a3f1c}
+.lbl{position:absolute;top:10px;transform:translateX(-50%);font:600 13px Georgia,serif;color:#5a3f1c}
+.needle{position:absolute;top:0;bottom:0;width:3px;margin-left:-1px;background:var(--red);box-shadow:0 0 6px var(--red);left:50%;transition:left .9s cubic-bezier(.4,.1,.3,1)}
+.readout{display:flex;justify-content:space-between;align-items:center;margin:12px 2px 0;font-family:"Courier New",monospace;color:var(--glow);gap:10px}
+.freq{font-size:22px;letter-spacing:.05em}
+.status{font-size:14px;color:var(--dim);text-align:center;flex:1}
+.signal{display:flex;gap:3px;align-items:flex-end;height:20px}
+.signal i{width:5px;background:#5a4630;border-radius:1px;transition:background .15s}
+.signal.live i{background:var(--glow)}
+.clock{font-family:"Courier New",monospace;font-size:54px;text-align:center;color:var(--glow);margin:10px 0 0;letter-spacing:.04em;text-shadow:0 0 12px #ffb84d55}
+.clock.idle{color:#5a4630;text-shadow:none}
+.bar{height:6px;background:#3a2b1f;border-radius:3px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;width:0;background:var(--brass)}
+.controls{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;font:inherit;border:0;border-radius:10px;padding:12px 16px;cursor:pointer;background:#4a3828;color:var(--text)}
+button:hover:not(:disabled){filter:brightness(1.15)}
+button:disabled{opacity:.4;cursor:default}
+.big{flex:1;font-size:20px;padding:18px;background:var(--brass);color:#2a1a08;font-weight:700;min-width:200px}
+.stop{background:var(--red);color:#fff}
+.choices{display:none;flex-direction:column;gap:8px;margin-top:14px}
+.choices.show{display:flex}
+.choices .q{color:var(--dim);font-size:14px}
+.choice{text-align:left;padding:14px 16px;background:#3a2b1f;font-size:16px;line-height:1.3}
+.choice small{color:var(--dim)}
+.choice.right{background:var(--green);color:#fff}
+.choice.right small{color:#e0ffe6}
+.choice.wrong{background:var(--red);color:#fff}
+.reveal{display:none;margin-top:14px;background:#1e1610;border:1px solid #4a3828;border-radius:14px;padding:14px;gap:14px;align-items:center}
+.reveal.show{display:flex}
+.reveal img{width:84px;height:84px;border-radius:8px;object-fit:cover;background:#333;flex:none}
+.reveal .v{font-weight:700;font-size:15px}
+.reveal .t{font-size:18px;font-weight:700;margin-top:2px}
+.reveal .a{color:var(--glow)}
+.reveal .m{color:var(--dim);font-size:14px;margin-top:2px}
+.score{display:flex;justify-content:space-between;margin-top:14px;font-size:15px;color:var(--dim)}
+.score b{color:var(--text)}
+.stations{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.chip{padding:8px 12px;border-radius:20px;background:#3a2b1f;font-size:14px}
+.chip.sel{background:var(--brass);color:#2a1a08}
+.row{display:flex;gap:8px;margin-top:8px}
+input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px solid #4a3828;background:#1e1610;color:var(--text);font:inherit}
+.summary{display:none;margin-top:14px;background:#1e1610;border:1px solid #4a3828;border-radius:14px;padding:16px;text-align:center}
+.summary.show{display:block}
+.summary .grid{font-size:28px;letter-spacing:4px;margin:6px 0}
+.summary .tot{font-size:22px;font-weight:700;color:var(--glow)}
+.summary .list{text-align:left;font-size:14px;color:var(--dim);margin:12px 0}
+.summary .list div{padding:3px 0}
+.summary .list span{color:var(--text)}
+.msg{margin-top:10px;font-size:14px;color:#ff9b7a;min-height:1em}
+.hint{font-size:13px;color:var(--dim);text-align:center;margin:16px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>RADIO DIAL</h1>
+  <div class="sub">Solo · name it as fast as you can · <a href="./">party version</a></div>
+
+  <div class="radio">
+    <div class="dial" id="dial"><div class="scale" id="scale"></div><div class="needle" id="needle"></div></div>
+    <div class="readout">
+      <div class="freq" id="freq">FM 98.1</div>
+      <div class="status" id="status">Loading…</div>
+      <div class="signal" id="signal"><i style="height:6px"></i><i style="height:10px"></i><i style="height:14px"></i><i style="height:19px"></i></div>
+    </div>
+
+    <div class="clock idle" id="clock">0.0</div>
+    <div class="bar"><i id="barFill"></i></div>
+
+    <div class="controls">
+      <button class="big" id="main" disabled>▶ Power on</button>
+    </div>
+
+    <div class="choices" id="choices"></div>
+
+    <div class="reveal" id="reveal">
+      <img id="cover" alt="">
+      <div style="flex:1;min-width:0">
+        <div class="v" id="rVerdict"></div>
+        <div class="t" id="rTitle"></div>
+        <div class="a" id="rArtist"></div>
+        <div class="m" id="rMeta"></div>
+        <div class="row"><button id="replay">↻ Hear more of it</button></div>
+      </div>
+    </div>
+
+    <div class="summary" id="summary">
+      <div>📻 Round complete</div>
+      <div class="grid" id="sGrid"></div>
+      <div class="tot" id="sTotal"></div>
+      <div class="list" id="sList"></div>
+      <div class="row" style="justify-content:center">
+        <button id="copy">Copy result</button>
+        <button class="big" id="again" style="flex:none;min-width:0;font-size:16px;padding:12px 18px">Play again</button>
+      </div>
+    </div>
+
+    <div class="score">
+      <span>Song <b id="songN">0</b>/<span id="roundLen">10</span></span>
+      <span>Right: <b id="rightN">0</b></span>
+      <span>Score: <b id="pts">0</b></span>
+    </div>
+  </div>
+
+  <h3>Station</h3>
+  <div class="stations" id="stations"></div>
+  <div class="row">
+    <input type="text" id="custom" placeholder="Or any playlist search: motown, grunge, yacht rock…">
+    <button id="tune">Tune</button>
+  </div>
+  <div class="msg" id="msg"></div>
+
+  <div class="hint">The clock starts when the song comes in. Hit “Name it” (or space) the moment you know it.<br>
+  Faster = more points: 1000 at 0s, down to 100 at 15s. Clips are Deezer’s 30-second previews.<br>
+  solo v1 · Nov 23, 2026</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+const ROUND_LEN = 10;      // songs per round
+const MAX_LISTEN = 15;     // seconds before the clock runs out
+const STATIC_SEC = 1.4;    // static before each song
+const CHOICES = 5;
+
+const STATIONS = [
+  ['60s', '60s hits'], ['70s', '70s hits'], ['80s', '80s hits'], ['90s', '90s hits'],
+  ['2000s', '2000s hits'], ['2010s', '2010s hits'], ['Classic rock', 'classic rock'],
+  ['One-hit wonders', 'one hit wonders'], ['Today’s chart', '__chart']
+];
+
+let tracks = [], idx = 0, stationName = '';
+let state = 'idle'; // idle → scanning → listening → answering → revealed → … → done
+let sweepId = 0, current = null, nextPrep = null;
+let t0 = 0, elapsed = 0, tickRaf = 0, limitTimer = 0, replayTimer = 0;
+let songN = 0, rightN = 0, total = 0, results = [];
+
+/* ---------- Deezer via JSONP ---------- */
+function jsonp(url) {
+  return new Promise((resolve, reject) => {
+    const cb = 'dz' + Math.random().toString(36).slice(2);
+    const s = document.createElement('script');
+    const timer = setTimeout(() => { cleanup(); reject(new Error('timed out')); }, 10000);
+    function cleanup() { clearTimeout(timer); delete window[cb]; s.remove(); }
+    window[cb] = d => { cleanup(); (d && d.error) ? reject(new Error(d.error.message || 'API error')) : resolve(d); };
+    s.onerror = () => { cleanup(); reject(new Error('network error')); };
+    s.src = url + (url.includes('?') ? '&' : '?') + 'output=jsonp&callback=' + cb;
+    document.head.appendChild(s);
+  });
+}
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+
+async function loadStation(label, q) {
+  resetRound(); setState('idle');
+  setMsg(''); status('Tuning to ' + label + '…');
+  $('main').disabled = true;
+  try {
+    let list;
+    if (q === '__chart') {
+      list = (await jsonp('https://api.deezer.com/chart/0/tracks?limit=100')).data;
+    } else {
+      const p = await jsonp('https://api.deezer.com/search/playlist?q=' + encodeURIComponent(q));
+      if (!p.data || !p.data.length) throw new Error('no playlists found for “' + q + '”');
+      const pick = p.data[Math.floor(Math.random() * Math.min(3, p.data.length))];
+      list = (await jsonp('https://api.deezer.com/playlist/' + pick.id + '/tracks?limit=200')).data;
+    }
+    const fresh = shuffle((list || []).filter(t => t.preview && t.readable !== false));
+    if (fresh.length < ROUND_LEN + CHOICES) throw new Error('not enough playable songs — try another station');
+    tracks = fresh; idx = 0; stationName = label;
+    pauseAll(); nextPrep = null; current = null;
+    status(label + ' · ' + tracks.length + ' songs');
+    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('sel', c.dataset.label === label));
+    $('main').disabled = false;
+  } catch (e) {
+    setMsg('Couldn’t tune in: ' + e.message);
+    status('No signal');
+    $('main').disabled = !tracks.length;
+  }
+}
+function nextTrack() {
+  if (idx >= tracks.length) { shuffle(tracks); idx = 0; }
+  return tracks[idx++];
+}
+
+/* ---------- Two reusable audio players (see README: iPhone unlock) ---------- */
+const players = [new Audio(), new Audio()];
+players.forEach(p => { p.preload = 'auto'; p.playsInline = true; });
+let playerTurn = 0, unlocked = false, unlockDone = Promise.resolve();
+const SILENCE = makeSilence();
+function makeSilence() {
+  const rate = 8000, n = 800, buf = new ArrayBuffer(44 + n), v = new DataView(buf);
+  const str = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  str(0, 'RIFF'); v.setUint32(4, 36 + n, true); str(8, 'WAVE'); str(12, 'fmt ');
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate, true);
+  v.setUint16(32, 1, true); v.setUint16(34, 8, true);
+  str(36, 'data'); v.setUint32(40, n, true);
+  for (let i = 0; i < n; i++) v.setUint8(44 + i, 128);
+  return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+}
+function unlockPlayers() {
+  if (unlocked) return;
+  unlocked = true;
+  unlockDone = Promise.allSettled(players.map(p => { p.src = SILENCE; return p.play().then(() => p.pause()); }));
+}
+function pauseAll() { players.forEach(p => p.pause()); }
+const canFade = (() => { const a = new Audio(); a.volume = 0.5; return a.volume === 0.5; })();
+const once = (el, ev, ms) => new Promise(r => {
+  const t = setTimeout(r, ms);
+  el.addEventListener(ev, () => { clearTimeout(t); r(); }, { once: true });
+});
+function fadeVol(a, to, ms) {
+  clearInterval(a._fade);
+  const from = a.volume, t1 = performance.now();
+  a._fade = setInterval(() => {
+    const k = Math.min(1, (performance.now() - t1) / ms);
+    a.volume = from + (to - from) * k;
+    if (k >= 1) clearInterval(a._fade);
+  }, 16);
+}
+
+// Start somewhere in the preview, leaving room for the full listening window.
+function randomStart(a) {
+  const maxStart = Math.max(0, Math.min((a.duration || 30) - MAX_LISTEN - 0.5, 14));
+  return Math.random() * maxStart;
+}
+function prepare(track) {
+  const a = players[playerTurn]; playerTurn = 1 - playerTurn;
+  const tok = a._tok = {};
+  a.pause(); a.muted = true;
+  return new Promise(resolve => {
+    let done = false;
+    const finish = (ok, start) => { if (!done) { done = true; resolve({ track, audio: a, start, ok, tok }); } };
+    a.addEventListener('loadedmetadata', () => {
+      if (a._tok !== tok || done) return;
+      const start = randomStart(a);
+      a.currentTime = start;
+      a.addEventListener('seeked', () => { if (a._tok === tok) finish(true, start); }, { once: true });
+      setTimeout(() => finish(true, start), 2500);
+    }, { once: true });
+    a.addEventListener('error', () => { if (a._tok === tok) finish(false); }, { once: true });
+    a.src = track.preview;
+    a.load();
+    setTimeout(() => finish(true, null), 4000);
+  });
+}
+
+/* ---------- Static ---------- */
+let ctx, noiseGain, bp;
+function initAudio() {
+  if (ctx) { ctx.resume(); return; }
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const len = ctx.sampleRate * 2;
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (Math.random() < 0.002 ? 2.5 : 0.7);
+  const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+  bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2200; bp.Q.value = 0.7;
+  noiseGain = ctx.createGain(); noiseGain.gain.value = 0;
+  src.connect(bp).connect(noiseGain).connect(ctx.destination);
+  src.start();
+}
+function noiseTo(v, t = 0.15) {
+  if (!ctx) return;
+  const g = noiseGain.gain, now = ctx.currentTime;
+  g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(v, now + t);
+}
+function wobble(sec) {
+  if (!ctx) return;
+  const f = bp.frequency, now = ctx.currentTime;
+  f.cancelScheduledValues(now); f.setValueAtTime(f.value, now);
+  for (let t = 0.15; t < sec; t += 0.15) f.linearRampToValueAtTime(800 + Math.random() * 3500, now + t);
+}
+
+/* ---------- One song: static → song + clock → Name it ---------- */
+async function nextSong(tries = 0) {
+  const id = ++sweepId;
+  setState('scanning');
+  hide('choices'); hide('reveal');
+  setClock(0, true);
+  await unlockDone;
+  if (id !== sweepId) return;
+  if (!nextPrep) nextPrep = prepare(nextTrack());
+
+  status('Scanning…'); setLive(false);
+  moveNeedle(); wobble(STATIC_SEC); noiseTo(0.35, 0.08);
+  const [prep] = await Promise.all([nextPrep, sleep(STATIC_SEC * 1000)]);
+  if (id !== sweepId) return;
+  nextPrep = prepare(nextTrack());
+  if (!prep.ok || prep.audio._tok !== prep.tok) return tries < 5 ? nextSong(tries + 1) : giveUp();
+
+  const a = prep.audio;
+  a.muted = true; a.volume = canFade ? 0 : 1;
+  try { await a.play(); } catch (e) { return tries < 5 ? nextSong(tries + 1) : giveUp(); }
+  if (prep.start == null) {
+    if (a.readyState < 1) await once(a, 'loadedmetadata', 3000);
+    prep.start = randomStart(a);
+    a.currentTime = prep.start;
+    await once(a, 'seeked', 1500);
+  }
+  if (id !== sweepId) { a.pause(); return; }
+
+  current = prep; songN++; updScore();
+  a.muted = false;
+  setLive(true); status('Signal!');
+  noiseTo(0.02, canFade ? 0.25 : 0.05);
+  if (canFade) fadeVol(a, 1, 250);
+
+  // The clock starts the moment the song is audible.
+  setState('listening');
+  t0 = performance.now();
+  tick();
+  limitTimer = setTimeout(() => stopClock(true), MAX_LISTEN * 1000);
+}
+function giveUp() { setMsg('Having trouble pulling in songs — try another station.'); setState('idle'); }
+
+function tick() {
+  elapsed = (performance.now() - t0) / 1000;
+  setClock(Math.min(elapsed, MAX_LISTEN), false);
+  if (state === 'listening') tickRaf = requestAnimationFrame(tick);
+}
+function stopClock(timeUp) {
+  if (state !== 'listening') return;
+  cancelAnimationFrame(tickRaf); clearTimeout(limitTimer);
+  elapsed = timeUp ? MAX_LISTEN : (performance.now() - t0) / 1000;
+  setClock(elapsed, false);
+  pauseAll(); noiseTo(0, 0.1); setLive(false);
+  status(timeUp ? 'Time’s up — take a guess' : 'Stopped at ' + elapsed.toFixed(1) + 's');
+  setState('answering');
+  showChoices(timeUp);
+}
+
+function showChoices(timeUp) {
+  const right = current.track;
+  // Wrong answers come from the same station, so they're the same era/genre.
+  // Prefer different artists so the choice isn't a giveaway.
+  const used = new Set([right.artist.name.toLowerCase()]);
+  const pool = shuffle(tracks.filter(t => t.id !== right.id && t.title !== right.title));
+  const wrong = [];
+  for (const t of pool) {
+    const n = t.artist.name.toLowerCase();
+    if (!used.has(n)) { used.add(n); wrong.push(t); }
+    if (wrong.length === CHOICES - 1) break;
+  }
+  for (const t of pool) { if (wrong.length >= CHOICES - 1) break; if (!wrong.includes(t)) wrong.push(t); }
+  const options = shuffle([right, ...wrong]);
+
+  const box = $('choices'); box.innerHTML = '';
+  const q = document.createElement('div'); q.className = 'q';
+  q.textContent = timeUp ? 'Time’s up — still worth 50 if you get it:' : 'What was it?';
+  box.appendChild(q);
+  options.forEach(t => {
+    const b = document.createElement('button');
+    b.className = 'choice';
+    b.innerHTML = '<span></span><br><small></small>';
+    b.querySelector('span').textContent = t.title;
+    b.querySelector('small').textContent = t.artist.name;
+    b.onclick = () => answer(t, b, timeUp);
+    b._track = t;
+    box.appendChild(b);
+  });
+  box.classList.add('show');
+}
+
+function answer(pick, btn, timeUp) {
+  if (state !== 'answering') return;
+  const right = current.track, ok = pick.id === right.id;
+  const pts = !ok ? 0 : timeUp ? 50 : Math.max(100, Math.round(1000 - elapsed * 60));
+  total += pts; if (ok) rightN++;
+  results.push({ ok, elapsed, timeUp, pts, track: right });
+  updScore();
+
+  document.querySelectorAll('.choice').forEach(b => {
+    b.disabled = true;
+    if (b._track.id === right.id) b.classList.add('right');
+  });
+  if (!ok) btn.classList.add('wrong');
+
+  $('rVerdict').textContent = ok
+    ? (timeUp ? '✓ Got it (after the buzzer) · +50' : '✓ ' + elapsed.toFixed(1) + 's · +' + pts)
+    : '✗ Not that one';
+  $('rVerdict').style.color = ok ? '#7fe08f' : '#ff8a7a';
+  $('rTitle').textContent = right.title;
+  $('rArtist').textContent = right.artist.name;
+  const album = right.album ? right.album.title : '';
+  $('rMeta').textContent = album;
+  $('cover').src = (right.album && right.album.cover_medium) || '';
+  const prep = current;
+  jsonp('https://api.deezer.com/track/' + right.id).then(d => {
+    const y = (d.release_date || (d.album && d.album.release_date) || '').slice(0, 4);
+    if (y && y !== '0000' && current === prep) $('rMeta').textContent = album + ' · ' + y;
+  }).catch(() => {});
+  show('reveal');
+
+  setState(songN >= ROUND_LEN ? 'lastReveal' : 'revealed');
+}
+
+function replay() {
+  if (!current) return;
+  const a = current.audio;
+  clearTimeout(replayTimer);
+  a.currentTime = current.start || 0; a.volume = 1; a.muted = false;
+  a.play().catch(() => {});
+  replayTimer = setTimeout(() => a.pause(), 12000);
+}
+
+/* ---------- Round ---------- */
+function resetRound() {
+  sweepId++; pauseAll(); noiseTo(0, 0.1);
+  cancelAnimationFrame(tickRaf); clearTimeout(limitTimer); clearTimeout(replayTimer);
+  songN = 0; rightN = 0; total = 0; results = [];
+  updScore(); hide('choices'); hide('reveal'); hide('summary');
+  setClock(0, true); setLive(false);
+}
+function startRound() {
+  if (!tracks.length) return;
+  unlockPlayers(); // must happen inside the tap (iPhone)
+  initAudio();
+  resetRound();
+  $('dial').classList.add('on');
+  nextSong();
+}
+function emoji(r) {
+  if (!r.ok) return '🟥';
+  if (r.timeUp) return '⬜';
+  return r.elapsed < 3 ? '🟩' : r.elapsed < 8 ? '🟨' : '🟧';
+}
+function showSummary() {
+  pauseAll(); clearTimeout(replayTimer);
+  hide('choices'); hide('reveal');
+  setState('done'); status('Round over');
+  $('sGrid').textContent = results.map(emoji).join('');
+  $('sTotal').textContent = total.toLocaleString() + ' pts · ' + rightN + '/' + ROUND_LEN;
+  const list = $('sList'); list.innerHTML = '';
+  results.forEach(r => {
+    const d = document.createElement('div');
+    d.textContent = emoji(r) + ' ' + (r.ok && !r.timeUp ? r.elapsed.toFixed(1) + 's  ' : '');
+    const s = document.createElement('span'); s.textContent = r.track.title;
+    d.appendChild(s); d.appendChild(document.createTextNode(' — ' + r.track.artist.name));
+    list.appendChild(d);
+  });
+  show('summary');
+}
+function shareText() {
+  return '📻 Radio Dial · ' + stationName + '\n' + results.map(emoji).join('') +
+    '\n' + rightN + '/' + ROUND_LEN + ' · ' + total.toLocaleString() + ' pts';
+}
+
+/* ---------- The one big button changes job with the state ---------- */
+function setState(s) {
+  state = s;
+  const m = $('main');
+  const labels = {
+    idle: ['▶ Power on', false, ''],
+    scanning: ['… tuning', true, 'stop'],
+    listening: ['✋ Name it! (space)', false, 'stop'],
+    answering: ['Pick an answer ↓', true, ''],
+    revealed: ['Next station ▶ (space)', false, ''],
+    lastReveal: ['See results ▶ (space)', false, ''],
+    done: ['▶ Play again', false, '']
+  };
+  const [text, dis, cls] = labels[s];
+  m.textContent = text; m.disabled = dis || !tracks.length;
+  m.className = 'big' + (cls ? ' ' + cls : '');
+  if (s === 'idle' || s === 'done') $('dial').classList.remove('on');
+}
+function mainAction() {
+  if (state === 'idle' || state === 'done') startRound();
+  else if (state === 'listening') stopClock(false);
+  else if (state === 'revealed') { clearTimeout(replayTimer); pauseAll(); nextSong(); }
+  else if (state === 'lastReveal') showSummary();
+}
+
+/* ---------- UI helpers ---------- */
+function moveNeedle() {
+  const f = Math.round((88 + Math.random() * 20) * 10) / 10;
+  $('needle').style.left = pos(f) + '%';
+  $('freq').textContent = 'FM ' + f.toFixed(1);
+}
+const pos = f => (f - 87.5) / 21 * 100;
+function setClock(sec, idle) {
+  $('clock').textContent = sec.toFixed(1);
+  $('clock').classList.toggle('idle', idle);
+  $('barFill').style.width = (idle ? 0 : Math.min(100, sec / MAX_LISTEN * 100)) + '%';
+}
+function status(s) { $('status').textContent = s; }
+function setMsg(s) { $('msg').textContent = s; }
+function setLive(on) { $('signal').classList.toggle('live', on); }
+function show(id) { $(id).classList.add('show'); }
+function hide(id) { $(id).classList.remove('show'); }
+function updScore() { $('songN').textContent = songN; $('rightN').textContent = rightN; $('pts').textContent = total.toLocaleString(); }
+
+function buildScale() {
+  const sc = $('scale');
+  for (let f = 88; f <= 108; f++) {
+    const t = document.createElement('div');
+    t.className = 'tick'; t.style.left = pos(f) + '%'; t.style.height = (f % 2 ? 14 : 26) + 'px';
+    sc.appendChild(t);
+    if (f % 2 === 0) {
+      const l = document.createElement('div');
+      l.className = 'lbl'; l.style.left = pos(f) + '%'; l.textContent = f;
+      sc.appendChild(l);
+    }
+  }
+  $('needle').style.left = pos(98.1) + '%';
+}
+function buildStations() {
+  STATIONS.forEach(([label, q]) => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = label; b.dataset.label = label;
+    b.onclick = () => loadStation(label, q);
+    $('stations').appendChild(b);
+  });
+}
+
+$('main').onclick = mainAction;
+$('replay').onclick = replay;
+$('again').onclick = startRound;
+$('copy').onclick = () => {
+  navigator.clipboard.writeText(shareText())
+    .then(() => { $('copy').textContent = 'Copied ✓'; setTimeout(() => $('copy').textContent = 'Copy result', 1500); })
+    .catch(() => setMsg('Couldn’t copy — long-press the result to select it.'));
+};
+$('tune').onclick = () => { const q = $('custom').value.trim(); if (q) loadStation(q, q); };
+$('custom').addEventListener('keydown', e => { if (e.key === 'Enter') $('tune').click(); });
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.code === 'Space') { e.preventDefault(); if (!$('main').disabled) mainAction(); }
+  // Number keys 1–5 pick an answer on a keyboard
+  if (state === 'answering' && /^[1-5]$/.test(e.key)) {
+    const b = document.querySelectorAll('.choice')[+e.key - 1];
+    if (b) b.click();
+  }
+});
+$('roundLen').textContent = ROUND_LEN;
+
+buildScale();
+buildStations();
+setState('idle');
+loadStation('80s', '80s hits');
+</script>
+</body>
+</html>

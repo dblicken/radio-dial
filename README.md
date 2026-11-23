@@ -4,7 +4,14 @@ A name-that-tune game in a single web page. A radio dial sweeps through static a
 
 **Play it:** https://dblicken.github.io/radio-dial/ (after GitHub Pages is turned on, see below)
 
-## How to play
+## Two versions
+
+- **Party** (`index.html`): one phone acts as the radio, people shout answers, and whoever holds the phone stops the dial.
+- **Solo** (`solo.html`, at https://dblicken.github.io/radio-dial/solo.html): a round of 10 songs for one player. Each song plays and a clock runs. Tap **Name it** when you know it, then pick from 5 choices. Faster answers score more (1000 points at 0s, down to 100 at 15s; 50 if the clock runs out). At the end you get a Wordle-style result to copy: 🟩 under 3s · 🟨 under 8s · 🟧 slower · ⬜ after the buzzer · 🟥 wrong.
+
+The wrong answers come from the same station, so they're from the same era and genre. Where possible they're also by different artists, so you can't just spot the one artist that doesn't fit.
+
+## How to play (party)
 
 1. Pick a station (80s, 90s, Classic rock…), or type any playlist search, such as "motown" or "yacht rock".
 2. Tap **Power on**. The dial sweeps, and every few seconds a song comes in.
