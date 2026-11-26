@@ -3,163 +3,99 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0b1026">
+<meta name="theme-color" content="#1b1410">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Radio Game">
 <title>The Radio Game</title>
 <style>
-:root{--amber:#ffb347;--amberDim:#7a5220;--glow:#ffcf6b;--text:#ece6dc;--dim:#9a948a;--red:#e0442f;--green:#2f8a45;--chrome1:#d9d9de;--chrome2:#6d6f78}
+:root{--bg:#1b1410;--brass:#d9a441;--glow:#ffcf6b;--text:#f3e6d0;--dim:#a8957a;--red:#c0261d;--green:#2f8a45}
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#0c0c0e;color:var(--text);min-height:100vh}
-.wrap{max-width:720px;margin:0 auto}
-
-/* ---------- Through the windshield ---------- */
-.windshield{position:relative;height:170px;overflow:hidden;border-radius:0 0 50% 50%/0 0 18px 18px;
-  background:linear-gradient(#070a1c 0%,#1b1838 45%,#4a2a4a 70%,#c76b3c 88%,#f0a35a 92%)}
-.star{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;opacity:.7}
-.road{position:absolute;left:0;right:0;bottom:0;height:52%;
-  background:linear-gradient(#2a2a30,#141418);clip-path:polygon(47% 0,53% 0,100% 100%,0 100%)}
-.edge{position:absolute;left:0;right:0;bottom:0;height:52%;background:#cfc6b0;opacity:.55;
-  clip-path:polygon(46.9% 0,47.2% 0,3% 100%,0 100%,0 97%)}
-.edge.r{clip-path:polygon(52.8% 0,53.1% 0,100% 97%,100% 100%,97% 100%)}
-.lanes{position:absolute;left:0;right:0;bottom:0;height:52%;
-  background:repeating-linear-gradient(to bottom,#f2e6b8 0 14px,transparent 14px 34px);
-  clip-path:polygon(49.85% 0,50.15% 0,51.4% 100%,48.6% 100%);
-  animation:drive .45s linear infinite;animation-play-state:paused}
-body.driving .lanes{animation-play-state:running}
-@keyframes drive{from{background-position-y:0}to{background-position-y:34px}}
-.hills{position:absolute;left:0;right:0;bottom:48%;height:26px;background:#140f22;
-  clip-path:polygon(0 100%,0 40%,12% 10%,25% 55%,38% 20%,52% 60%,66% 15%,80% 50%,92% 25%,100% 45%,100% 100%)}
-.mirror{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:210px;height:44px;border-radius:12px;
-  background:linear-gradient(160deg,#3b3f4c,#15161b 60%,#2b2d35);border:3px solid #050506;box-shadow:0 4px 12px #000c;
-  display:flex;align-items:center;justify-content:center}
-.mirror::before{content:"";position:absolute;top:-10px;left:50%;width:10px;height:10px;margin-left:-5px;background:#050506}
-.mirror span{font:700 14px Georgia,serif;letter-spacing:.28em;color:var(--glow);text-shadow:0 0 8px #ffb34766}
-
-/* ---------- Dashboard ---------- */
-.dash{position:relative;margin-top:-6px;padding:20px 14px 16px;border-radius:40px 40px 0 0/24px 24px 0 0;
-  background:radial-gradient(ellipse at 50% 0,#2a2a2f,#151518 70%);box-shadow:inset 0 2px 0 #ffffff10}
-.headunit{display:flex;align-items:center;gap:10px;padding:12px 10px;border-radius:10px;
-  background:linear-gradient(#26272c,#111114);border:2px solid #000;
-  box-shadow:inset 0 0 0 2px #3a3b42,0 6px 18px #000c}
-.knob{flex:none;width:50px;height:50px;border-radius:50%;position:relative;
-  background:radial-gradient(circle at 35% 30%,var(--chrome1),var(--chrome2) 55%,#2a2b30 100%);
-  box-shadow:0 3px 6px #000,inset 0 -3px 4px #0008;transform:rotate(var(--rot,0deg));transition:transform .9s cubic-bezier(.4,.1,.3,1)}
-.knob::after{content:"";position:absolute;top:5px;left:50%;width:3px;height:12px;margin-left:-1.5px;border-radius:2px;background:#222}
-.kw{flex:none;display:flex;flex-direction:column;align-items:center;gap:6px}
-.kw span{font-size:9px;letter-spacing:.15em;color:var(--dim)}
-.face{flex:1;min-width:0}
-.brand{font-size:9px;letter-spacing:.25em;color:var(--dim);text-align:center;margin-bottom:6px}
-.lcd{background:linear-gradient(#1a1006,#0d0803);border-radius:6px;padding:6px 10px 6px;border:1px solid #000;
-  box-shadow:inset 0 0 14px #000;font-family:"Courier New",monospace;color:var(--amber);text-shadow:0 0 6px #ffb34799}
-.lcdtop{display:flex;justify-content:space-between;align-items:center}
-.freq{font-size:16px;letter-spacing:.06em}
-.signal{display:flex;gap:2px;align-items:flex-end;height:14px}
-.signal i{width:4px;background:var(--amberDim);border-radius:1px}
-.signal.live i{background:var(--amber);box-shadow:0 0 4px var(--amber)}
-.clock{font-size:46px;text-align:center;line-height:1.05;letter-spacing:.04em}
-.clock.idle{color:var(--amberDim);text-shadow:none}
-.clock.flash{animation:flash .9s ease-out}
-@keyframes flash{0%{color:#fff;text-shadow:0 0 24px #fff,0 0 50px var(--glow);transform:scale(1.12)}100%{transform:scale(1)}}
-.status{font-size:12px;text-align:center;color:#c98a3a;min-height:1.2em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dial{position:relative;height:34px;margin-top:8px;border-radius:4px;background:#0a0a0c;border:1px solid #000;overflow:hidden;
-  box-shadow:inset 0 0 10px #000}
-.dial.on{box-shadow:inset 0 0 14px #ffb34733}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(circle at 50% 0,#3a2a1e,var(--bg) 70%);color:var(--text);min-height:100vh;display:flex;justify-content:center;padding:20px}
+.wrap{width:100%;max-width:720px}
+h1{font-family:Georgia,serif;font-weight:normal;letter-spacing:.2em;text-align:center;color:var(--brass);margin:4px 0 4px}
+.sub{text-align:center;color:var(--dim);font-size:14px;margin-bottom:14px}
+.sub a{color:var(--dim)}
+h3{font-size:14px;color:var(--dim);font-weight:600;margin:18px 0 4px;letter-spacing:.05em;text-transform:uppercase}
+.radio{background:linear-gradient(#3b2b20,#251b14);border:2px solid #4a3828;border-radius:18px;padding:18px;box-shadow:0 10px 40px #000a,inset 0 1px 0 #ffffff14}
+.dial{position:relative;height:90px;background:linear-gradient(#c9b48a,#b39a68);border-radius:10px;overflow:hidden;box-shadow:inset 0 0 18px #5a4020;transition:background .4s,box-shadow .4s}
+.dial.on{background:linear-gradient(#ffe9b8,#f2cf8a);box-shadow:inset 0 0 30px #ffb84d,0 0 18px #ffb84d55}
 .scale{position:absolute;inset:0}
-.tick{position:absolute;bottom:0;width:1px;background:var(--amberDim)}
-.dial.on .tick{background:#b07a35}
-.lbl{position:absolute;top:2px;transform:translateX(-50%);font:600 9px "Courier New",monospace;color:var(--amberDim)}
-.dial.on .lbl{color:var(--amber)}
-.needle{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--red);box-shadow:0 0 6px var(--red);left:50%;transition:left .9s cubic-bezier(.4,.1,.3,1)}
-.presets{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:8px}
-.chip.preset{padding:5px 0 4px;border-radius:3px;background:linear-gradient(#3a3b42,#1c1d22);color:var(--text);font:700 12px system-ui,sans-serif;
-  box-shadow:0 2px 0 #000,inset 0 1px 0 #ffffff22;line-height:1.1}
-.chip.preset small{display:block;font-size:8px;font-weight:600;color:var(--dim);letter-spacing:.04em}
-.chip.preset.sel{background:linear-gradient(#2a2b31,#141519);color:var(--amber);text-shadow:0 0 6px #ffb347aa;box-shadow:0 1px 0 #000,inset 0 1px 3px #000}
-.chip.preset.sel small{color:#c98a3a}
-
-.bar{height:5px;background:#26272c;border-radius:3px;overflow:hidden;margin-top:12px}
-.bar i{display:block;height:100%;width:0;background:var(--amber)}
-.controls{display:flex;margin-top:12px}
-button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;font:inherit;border:0;border-radius:10px;padding:12px 16px;cursor:pointer;background:#2e2f35;color:var(--text)}
+.tick{position:absolute;bottom:0;width:1px;background:#5a3f1c}
+.lbl{position:absolute;top:10px;transform:translateX(-50%);font:600 13px Georgia,serif;color:#5a3f1c}
+.needle{position:absolute;top:0;bottom:0;width:3px;margin-left:-1px;background:var(--red);box-shadow:0 0 6px var(--red);left:50%;transition:left .9s cubic-bezier(.4,.1,.3,1)}
+.readout{display:flex;justify-content:space-between;align-items:center;margin:12px 2px 0;font-family:"Courier New",monospace;color:var(--glow);gap:10px}
+.freq{font-size:22px;letter-spacing:.05em}
+.status{font-size:14px;color:var(--dim);text-align:center;flex:1}
+.signal{display:flex;gap:3px;align-items:flex-end;height:20px}
+.signal i{width:5px;background:#5a4630;border-radius:1px;transition:background .15s}
+.signal.live i{background:var(--glow)}
+.clock{font-family:"Courier New",monospace;font-size:54px;text-align:center;color:var(--glow);margin:10px 0 0;letter-spacing:.04em;text-shadow:0 0 12px #ffb84d55}
+.clock.idle{color:#5a4630;text-shadow:none}
+.clock.flash{animation:flash .9s ease-out}
+@keyframes flash{0%{color:#fff;text-shadow:0 0 30px #fff,0 0 60px var(--glow);transform:scale(1.15)}100%{transform:scale(1)}}
+.bar{height:6px;background:#3a2b1f;border-radius:3px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;width:0;background:var(--brass)}
+.controls{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;font:inherit;border:0;border-radius:10px;padding:12px 16px;cursor:pointer;background:#4a3828;color:var(--text)}
 button:hover:not(:disabled){filter:brightness(1.15)}
-button:disabled{opacity:.45;cursor:default}
-.big{flex:1;font-size:20px;padding:18px;font-weight:700;color:#1d1204;
-  background:linear-gradient(#ffc56a,#e29a35);box-shadow:0 4px 0 #8a5a1c,0 6px 14px #000a}
-.big:active:not(:disabled){transform:translateY(2px);box-shadow:0 2px 0 #8a5a1c}
-.stop{background:linear-gradient(#f0614a,#b8301f);color:#fff;box-shadow:0 4px 0 #6e1a10,0 6px 14px #000a}
-
+button:disabled{opacity:.4;cursor:default}
+.big{flex:1;font-size:20px;padding:18px;background:var(--brass);color:#2a1a08;font-weight:700;min-width:200px}
+.stop{background:var(--red);color:#fff}
 .choices{display:none;flex-direction:column;gap:8px;margin-top:14px}
 .choices.show{display:flex}
 .choices .q{color:var(--dim);font-size:14px}
-.choice{text-align:left;padding:14px 16px;background:#24252a;font-size:16px;line-height:1.3;border:1px solid #33343b}
+.choice{text-align:left;padding:14px 16px;background:#3a2b1f;font-size:16px;line-height:1.3}
 .choice small{color:var(--dim)}
 .choice.right{background:var(--green);color:#fff}
 .choice.right small{color:#e0ffe6}
 .choice.wrong{background:var(--red);color:#fff}
-.reveal{display:none;margin-top:14px;background:#141417;border:1px solid #2e2f35;border-radius:14px;padding:14px;gap:14px;align-items:center}
+.reveal{display:none;margin-top:14px;background:#1e1610;border:1px solid #4a3828;border-radius:14px;padding:14px;gap:14px;align-items:center}
 .reveal.show{display:flex}
 .reveal img{width:84px;height:84px;border-radius:8px;object-fit:cover;background:#333;flex:none}
 .reveal .v{font-weight:700;font-size:15px}
 .reveal .t{font-size:18px;font-weight:700;margin-top:2px}
 .reveal .a{color:var(--glow)}
-.reveal .y{font:700 26px 'Courier New',monospace;color:var(--amber);margin-top:4px;text-shadow:0 0 6px #ffb34766}
-.reveal .y.unsure{color:var(--dim);text-shadow:none}
+.reveal .y{font:700 26px 'Courier New',monospace;color:var(--glow);margin-top:4px}
+.reveal .y.unsure{color:var(--dim)}
 .reveal .y small{font:400 12px system-ui,sans-serif;color:var(--dim)}
 .reveal .m{color:var(--dim);font-size:14px;margin-top:2px}
+.score{display:flex;justify-content:space-between;margin-top:14px;font-size:15px;color:var(--dim)}
+.score b{color:var(--text)}
+.stations{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.chip{padding:8px 12px;border-radius:20px;background:#3a2b1f;font-size:14px}
+.chip.sel{background:var(--brass);color:#2a1a08}
 .row{display:flex;gap:8px;margin-top:8px}
-.summary{display:none;margin-top:14px;background:#141417;border:1px solid #2e2f35;border-radius:14px;padding:16px;text-align:center}
+input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px solid #4a3828;background:#1e1610;color:var(--text);font:inherit}
+.summary{display:none;margin-top:14px;background:#1e1610;border:1px solid #4a3828;border-radius:14px;padding:16px;text-align:center}
 .summary.show{display:block}
 .summary .grid{font-size:28px;letter-spacing:4px;margin:6px 0}
-.summary .tot{font-size:20px;font-weight:700;color:var(--glow)}
+.summary .tot{font-size:22px;font-weight:700;color:var(--glow)}
 .summary .list{text-align:left;font-size:14px;color:var(--dim);margin:12px 0}
 .summary .list div{padding:3px 0}
 .summary .list span{color:var(--text)}
-.score{display:flex;justify-content:space-between;margin-top:14px;font-size:15px;color:var(--dim)}
-.score b{color:var(--text)}
-
-.below{padding:0 14px 20px}
-h3{font-size:13px;color:var(--dim);font-weight:600;margin:18px 0 4px;letter-spacing:.08em;text-transform:uppercase}
-.stations{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
-.chip{padding:8px 12px;border-radius:20px;background:#24252a;font-size:14px}
-.chip.sel{background:var(--amber);color:#1d1204}
-input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px solid #33343b;background:#141417;color:var(--text);font:inherit}
 .msg{margin-top:10px;font-size:14px;color:#ff9b7a;min-height:1em}
 .hint{font-size:13px;color:var(--dim);text-align:center;margin:16px 0}
-.hint a{color:var(--dim)}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="windshield">
-    <i class="star" style="left:8%;top:18%"></i><i class="star" style="left:22%;top:40%"></i><i class="star" style="left:35%;top:12%"></i>
-    <i class="star" style="left:71%;top:30%"></i><i class="star" style="left:84%;top:14%"></i><i class="star" style="left:93%;top:42%"></i>
-    <div class="hills"></div>
-    <div class="road"></div><div class="edge"></div><div class="edge r"></div><div class="lanes"></div>
-    <div class="mirror"><span>THE RADIO GAME</span></div>
-  </div>
+  <h1>THE RADIO GAME</h1>
+  <div class="sub">Name it as fast as you can · <a href="../solo.html">original Radio Dial</a></div>
 
-  <div class="dash">
-    <div class="headunit">
-      <div class="kw"><div class="knob" id="volKnob"></div><span>VOL</span></div>
-      <div class="face">
-        <div class="brand">AM · FM STEREO · NAME IT FAST</div>
-        <div class="lcd">
-          <div class="lcdtop">
-            <span class="freq" id="freq">FM 98.1</span>
-            <span class="signal" id="signal"><i style="height:4px"></i><i style="height:7px"></i><i style="height:10px"></i><i style="height:14px"></i></span>
-          </div>
-          <div class="clock idle" id="clock">0.0</div>
-          <div class="status" id="status">Loading…</div>
-        </div>
-        <div class="dial" id="dial"><div class="scale" id="scale"></div><div class="needle" id="needle"></div></div>
-        <div class="presets" id="presets"></div>
-      </div>
-      <div class="kw"><div class="knob" id="tuneKnob"></div><span>TUNE</span></div>
+  <div class="radio">
+    <div class="dial" id="dial"><div class="scale" id="scale"></div><div class="needle" id="needle"></div></div>
+    <div class="readout">
+      <div class="freq" id="freq">FM 98.1</div>
+      <div class="status" id="status">Loading…</div>
+      <div class="signal" id="signal"><i style="height:6px"></i><i style="height:10px"></i><i style="height:14px"></i><i style="height:19px"></i></div>
     </div>
 
+    <div class="clock idle" id="clock">0.0</div>
     <div class="bar"><i id="barFill"></i></div>
-    <div class="controls"><button class="big" id="main" disabled>▶ Power on</button></div>
+
+    <div class="controls">
+      <button class="big" id="main" disabled>▶ Power on</button>
+    </div>
 
     <div class="choices" id="choices"></div>
 
@@ -176,13 +112,13 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
     </div>
 
     <div class="summary" id="summary">
-      <div>📻 End of the drive</div>
+      <div>📻 Round complete</div>
       <div class="grid" id="sGrid"></div>
       <div class="tot" id="sTotal"></div>
       <div class="list" id="sList"></div>
       <div class="row" style="justify-content:center">
         <button id="copy">Copy result</button>
-        <button class="big" id="again" style="flex:none;font-size:16px;padding:12px 18px">Drive again</button>
+        <button class="big" id="again" style="flex:none;min-width:0;font-size:16px;padding:12px 18px">Play again</button>
       </div>
     </div>
 
@@ -193,18 +129,18 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
     </div>
   </div>
 
-  <div class="below">
-    <h3>More stations</h3>
-    <div class="stations" id="stations"></div>
-    <div class="row">
-      <input type="text" id="custom" placeholder="Or any playlist search: motown, grunge, yacht rock…">
-      <button id="tune">Tune</button>
-    </div>
-    <div class="msg" id="msg"></div>
-    <div class="hint">Presets 1–6 pick a decade. The clock starts when the song comes in — hit “Name it” (or space) the moment you know it.<br>
-    Points halve every 2.5s you listen (2,000 at 0s). Pick within 1.5s for full credit; wrong or too slow: −500. Under 2s = ⚡.<br>
-    The Radio Game v0.1 · car dash experiment · Nov 26, 2026 · <a href="../solo.html">original Radio Dial</a></div>
+  <h3>Station</h3>
+  <div class="stations" id="stations"></div>
+  <div class="row">
+    <input type="text" id="custom" placeholder="Or any playlist search: motown, grunge, yacht rock…">
+    <button id="tune">Tune</button>
   </div>
+  <div class="msg" id="msg"></div>
+
+  <div class="hint">The clock starts when the song comes in. Hit “Name it” (or space) the moment you know it.<br>
+  Points halve every 2.5s you listen (2,000 at 0s). Then pick within 1.5s for full credit — the bar drains for 4s.<br>
+  Wrong or too slow: −500. Correct under 2s with a quick pick = ⚡ Lightning. Clips are Deezer’s 30-second previews.<br>
+  The Radio Game v0.2 · back to the classic look · Nov 26, 2026</div>
 </div>
 
 <script src="year.js"></script>
@@ -600,7 +536,7 @@ function showSummary() {
 }
 function shareText() {
   const fastest = results.filter(r => r.ok && !r.timeUp).reduce((m, r) => Math.min(m, r.elapsed), Infinity);
-  return '🚗📻 The Radio Game · ' + stationName + '\n' + results.map(emoji).join('') +
+  return '📻 The Radio Game · ' + stationName + '\n' + results.map(emoji).join('') +
     '\n' + rightN + '/' + ROUND_LEN + ' · ' + total.toLocaleString() + ' pts' +
     (isFinite(fastest) ? ' · fastest ' + fastest.toFixed(1) + 's' : '');
 }
@@ -608,8 +544,6 @@ function shareText() {
 /* ---------- The one big button changes job with the state ---------- */
 function setState(s) {
   state = s;
-  // The road only moves while you're driving (playing).
-  document.body.classList.toggle('driving', s !== 'idle' && s !== 'done');
   const m = $('main');
   const labels = {
     idle: ['▶ Power on', false, ''],
@@ -618,7 +552,7 @@ function setState(s) {
     answering: ['Pick fast ↓', true, ''],
     revealed: ['Next station ▶ (space)', false, ''],
     lastReveal: ['See results ▶ (space)', false, ''],
-    done: ['▶ Drive again', false, '']
+    done: ['▶ Play again', false, '']
   };
   const [text, dis, cls] = labels[s];
   m.textContent = text; m.disabled = dis || !tracks.length;
@@ -650,8 +584,6 @@ function moveNeedle() {
   const f = Math.round((88 + Math.random() * 20) * 10) / 10;
   $('needle').style.left = pos(f) + '%';
   $('freq').textContent = 'FM ' + f.toFixed(1);
-  // Turn the TUNE knob along with the needle: about 13° per MHz.
-  $('tuneKnob').style.setProperty('--rot', ((f - 98) * 13).toFixed(1) + 'deg');
 }
 const pos = f => (f - 87.5) / 21 * 100;
 function setClock(sec, idle) {
@@ -673,7 +605,7 @@ function buildScale() {
     const t = document.createElement('div');
     t.className = 'tick'; t.style.left = pos(f) + '%'; t.style.height = (f % 2 ? 14 : 26) + 'px';
     sc.appendChild(t);
-    if (f % 2 === 0 && f < 108) {
+    if (f % 2 === 0) {
       const l = document.createElement('div');
       l.className = 'lbl'; l.style.left = pos(f) + '%'; l.textContent = f;
       sc.appendChild(l);
@@ -681,21 +613,12 @@ function buildScale() {
   }
   $('needle').style.left = pos(98.1) + '%';
 }
-// The first six stations become the radio's preset buttons; the rest go below.
 function buildStations() {
-  STATIONS.forEach(([label, q], i) => {
+  STATIONS.forEach(([label, q]) => {
     const b = document.createElement('button');
-    b.dataset.label = label;
+    b.className = 'chip'; b.textContent = label; b.dataset.label = label;
     b.onclick = () => loadStation(label, q);
-    if (i < 6) {
-      b.className = 'chip preset';
-      b.innerHTML = (i + 1) + '<small></small>';
-      b.querySelector('small').textContent = label;
-      $('presets').appendChild(b);
-    } else {
-      b.className = 'chip'; b.textContent = label;
-      $('stations').appendChild(b);
-    }
+    $('stations').appendChild(b);
   });
 }
 
