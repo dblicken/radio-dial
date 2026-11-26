@@ -65,3 +65,9 @@ Repo **Settings → Pages → Build and deployment → Source: Deploy from a bra
 - Two-team scoring
 - Decade guess for a bonus point
 - Mashup round (two stations bleeding into each other)
+
+## The Radio Game (`radio-game/`)
+
+An experimental fork, started Nov 26, 2026 from Radio Dial Solo v3.1 and played at https://dblicken.github.io/radio-dial/radio-game/. It's the same game in a car: a night drive seen through the windshield (the lane lines only move while you're playing), an 80s-style head unit with an amber display, a TUNE knob that turns with the needle, and preset buttons 1–6 for the decades. It has its own copy of `year.js`, so experiments here can't change the original.
+
+**The original is frozen** at git tag `radio-dial-v1`. To see exactly what it was: `git checkout radio-dial-v1`.

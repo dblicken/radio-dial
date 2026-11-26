@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b1026">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Radio Game">
+<title>The Radio Game</title>
+<style>
+:root{--amber:#ffb347;--amberDim:#7a5220;--glow:#ffcf6b;--text:#ece6dc;--dim:#9a948a;--red:#e0442f;--green:#2f8a45;--chrome1:#d9d9de;--chrome2:#6d6f78}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#0c0c0e;color:var(--text);min-height:100vh}
+.wrap{max-width:720px;margin:0 auto}
+
+/* ---------- Through the windshield ---------- */
+.windshield{position:relative;height:170px;overflow:hidden;border-radius:0 0 50% 50%/0 0 18px 18px;
+  background:linear-gradient(#070a1c 0%,#1b1838 45%,#4a2a4a 70%,#c76b3c 88%,#f0a35a 92%)}
+.star{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;opacity:.7}
+.road{position:absolute;left:0;right:0;bottom:0;height:52%;
+  background:linear-gradient(#2a2a30,#141418);clip-path:polygon(47% 0,53% 0,100% 100%,0 100%)}
+.edge{position:absolute;left:0;right:0;bottom:0;height:52%;background:#cfc6b0;opacity:.55;
+  clip-path:polygon(46.9% 0,47.2% 0,3% 100%,0 100%,0 97%)}
+.edge.r{clip-path:polygon(52.8% 0,53.1% 0,100% 97%,100% 100%,97% 100%)}
+.lanes{position:absolute;left:0;right:0;bottom:0;height:52%;
+  background:repeating-linear-gradient(to bottom,#f2e6b8 0 14px,transparent 14px 34px);
+  clip-path:polygon(49.85% 0,50.15% 0,51.4% 100%,48.6% 100%);
+  animation:drive .45s linear infinite;animation-play-state:paused}
+body.driving .lanes{animation-play-state:running}
+@keyframes drive{from{background-position-y:0}to{background-position-y:34px}}
+.hills{position:absolute;left:0;right:0;bottom:48%;height:26px;background:#140f22;
+  clip-path:polygon(0 100%,0 40%,12% 10%,25% 55%,38% 20%,52% 60%,66% 15%,80% 50%,92% 25%,100% 45%,100% 100%)}
+.mirror{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:210px;height:44px;border-radius:12px;
+  background:linear-gradient(160deg,#3b3f4c,#15161b 60%,#2b2d35);border:3px solid #050506;box-shadow:0 4px 12px #000c;
+  display:flex;align-items:center;justify-content:center}
+.mirror::before{content:"";position:absolute;top:-10px;left:50%;width:10px;height:10px;margin-left:-5px;background:#050506}
+.mirror span{font:700 14px Georgia,serif;letter-spacing:.28em;color:var(--glow);text-shadow:0 0 8px #ffb34766}
+
+/* ---------- Dashboard ---------- */
+.dash{position:relative;margin-top:-6px;padding:20px 14px 16px;border-radius:40px 40px 0 0/24px 24px 0 0;
+  background:radial-gradient(ellipse at 50% 0,#2a2a2f,#151518 70%);box-shadow:inset 0 2px 0 #ffffff10}
+.headunit{display:flex;align-items:center;gap:10px;padding:12px 10px;border-radius:10px;
+  background:linear-gradient(#26272c,#111114);border:2px solid #000;
+  box-shadow:inset 0 0 0 2px #3a3b42,0 6px 18px #000c}
+.knob{flex:none;width:50px;height:50px;border-radius:50%;position:relative;
+  background:radial-gradient(circle at 35% 30%,var(--chrome1),var(--chrome2) 55%,#2a2b30 100%);
+  box-shadow:0 3px 6px #000,inset 0 -3px 4px #0008;transform:rotate(var(--rot,0deg));transition:transform .9s cubic-bezier(.4,.1,.3,1)}
+.knob::after{content:"";position:absolute;top:5px;left:50%;width:3px;height:12px;margin-left:-1.5px;border-radius:2px;background:#222}
+.kw{flex:none;display:flex;flex-direction:column;align-items:center;gap:6px}
+.kw span{font-size:9px;letter-spacing:.15em;color:var(--dim)}
+.face{flex:1;min-width:0}
+.brand{font-size:9px;letter-spacing:.25em;color:var(--dim);text-align:center;margin-bottom:6px}
+.lcd{background:linear-gradient(#1a1006,#0d0803);border-radius:6px;padding:6px 10px 6px;border:1px solid #000;
+  box-shadow:inset 0 0 14px #000;font-family:"Courier New",monospace;color:var(--amber);text-shadow:0 0 6px #ffb34799}
+.lcdtop{display:flex;justify-content:space-between;align-items:center}
+.freq{font-size:16px;letter-spacing:.06em}
+.signal{display:flex;gap:2px;align-items:flex-end;height:14px}
+.signal i{width:4px;background:var(--amberDim);border-radius:1px}
+.signal.live i{background:var(--amber);box-shadow:0 0 4px var(--amber)}
+.clock{font-size:46px;text-align:center;line-height:1.05;letter-spacing:.04em}
+.clock.idle{color:var(--amberDim);text-shadow:none}
+.clock.flash{animation:flash .9s ease-out}
+@keyframes flash{0%{color:#fff;text-shadow:0 0 24px #fff,0 0 50px var(--glow);transform:scale(1.12)}100%{transform:scale(1)}}
+.status{font-size:12px;text-align:center;color:#c98a3a;min-height:1.2em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dial{position:relative;height:34px;margin-top:8px;border-radius:4px;background:#0a0a0c;border:1px solid #000;overflow:hidden;
+  box-shadow:inset 0 0 10px #000}
+.dial.on{box-shadow:inset 0 0 14px #ffb34733}
+.scale{position:absolute;inset:0}
+.tick{position:absolute;bottom:0;width:1px;background:var(--amberDim)}
+.dial.on .tick{background:#b07a35}
+.lbl{position:absolute;top:2px;transform:translateX(-50%);font:600 9px "Courier New",monospace;color:var(--amberDim)}
+.dial.on .lbl{color:var(--amber)}
+.needle{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--red);box-shadow:0 0 6px var(--red);left:50%;transition:left .9s cubic-bezier(.4,.1,.3,1)}
+.presets{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:8px}
+.chip.preset{padding:5px 0 4px;border-radius:3px;background:linear-gradient(#3a3b42,#1c1d22);color:var(--text);font:700 12px system-ui,sans-serif;
+  box-shadow:0 2px 0 #000,inset 0 1px 0 #ffffff22;line-height:1.1}
+.chip.preset small{display:block;font-size:8px;font-weight:600;color:var(--dim);letter-spacing:.04em}
+.chip.preset.sel{background:linear-gradient(#2a2b31,#141519);color:var(--amber);text-shadow:0 0 6px #ffb347aa;box-shadow:0 1px 0 #000,inset 0 1px 3px #000}
+.chip.preset.sel small{color:#c98a3a}
+
+.bar{height:5px;background:#26272c;border-radius:3px;overflow:hidden;margin-top:12px}
+.bar i{display:block;height:100%;width:0;background:var(--amber)}
+.controls{display:flex;margin-top:12px}
+button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;font:inherit;border:0;border-radius:10px;padding:12px 16px;cursor:pointer;background:#2e2f35;color:var(--text)}
+button:hover:not(:disabled){filter:brightness(1.15)}
+button:disabled{opacity:.45;cursor:default}
+.big{flex:1;font-size:20px;padding:18px;font-weight:700;color:#1d1204;
+  background:linear-gradient(#ffc56a,#e29a35);box-shadow:0 4px 0 #8a5a1c,0 6px 14px #000a}
+.big:active:not(:disabled){transform:translateY(2px);box-shadow:0 2px 0 #8a5a1c}
+.stop{background:linear-gradient(#f0614a,#b8301f);color:#fff;box-shadow:0 4px 0 #6e1a10,0 6px 14px #000a}
+
+.choices{display:none;flex-direction:column;gap:8px;margin-top:14px}
+.choices.show{display:flex}
+.choices .q{color:var(--dim);font-size:14px}
+.choice{text-align:left;padding:14px 16px;background:#24252a;font-size:16px;line-height:1.3;border:1px solid #33343b}
+.choice small{color:var(--dim)}
+.choice.right{background:var(--green);color:#fff}
+.choice.right small{color:#e0ffe6}
+.choice.wrong{background:var(--red);color:#fff}
+.reveal{display:none;margin-top:14px;background:#141417;border:1px solid #2e2f35;border-radius:14px;padding:14px;gap:14px;align-items:center}
+.reveal.show{display:flex}
+.reveal img{width:84px;height:84px;border-radius:8px;object-fit:cover;background:#333;flex:none}
+.reveal .v{font-weight:700;font-size:15px}
+.reveal .t{font-size:18px;font-weight:700;margin-top:2px}
+.reveal .a{color:var(--glow)}
+.reveal .y{font:700 26px 'Courier New',monospace;color:var(--amber);margin-top:4px;text-shadow:0 0 6px #ffb34766}
+.reveal .y.unsure{color:var(--dim);text-shadow:none}
+.reveal .y small{font:400 12px system-ui,sans-serif;color:var(--dim)}
+.reveal .m{color:var(--dim);font-size:14px;margin-top:2px}
+.row{display:flex;gap:8px;margin-top:8px}
+.summary{display:none;margin-top:14px;background:#141417;border:1px solid #2e2f35;border-radius:14px;padding:16px;text-align:center}
+.summary.show{display:block}
+.summary .grid{font-size:28px;letter-spacing:4px;margin:6px 0}
+.summary .tot{font-size:20px;font-weight:700;color:var(--glow)}
+.summary .list{text-align:left;font-size:14px;color:var(--dim);margin:12px 0}
+.summary .list div{padding:3px 0}
+.summary .list span{color:var(--text)}
+.score{display:flex;justify-content:space-between;margin-top:14px;font-size:15px;color:var(--dim)}
+.score b{color:var(--text)}
+
+.below{padding:0 14px 20px}
+h3{font-size:13px;color:var(--dim);font-weight:600;margin:18px 0 4px;letter-spacing:.08em;text-transform:uppercase}
+.stations{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.chip{padding:8px 12px;border-radius:20px;background:#24252a;font-size:14px}
+.chip.sel{background:var(--amber);color:#1d1204}
+input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px solid #33343b;background:#141417;color:var(--text);font:inherit}
+.msg{margin-top:10px;font-size:14px;color:#ff9b7a;min-height:1em}
+.hint{font-size:13px;color:var(--dim);text-align:center;margin:16px 0}
+.hint a{color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="windshield">
+    <i class="star" style="left:8%;top:18%"></i><i class="star" style="left:22%;top:40%"></i><i class="star" style="left:35%;top:12%"></i>
+    <i class="star" style="left:71%;top:30%"></i><i class="star" style="left:84%;top:14%"></i><i class="star" style="left:93%;top:42%"></i>
+    <div class="hills"></div>
+    <div class="road"></div><div class="edge"></div><div class="edge r"></div><div class="lanes"></div>
+    <div class="mirror"><span>THE RADIO GAME</span></div>
+  </div>
+
+  <div class="dash">
+    <div class="headunit">
+      <div class="kw"><div class="knob" id="volKnob"></div><span>VOL</span></div>
+      <div class="face">
+        <div class="brand">AM · FM STEREO · NAME IT FAST</div>
+        <div class="lcd">
+          <div class="lcdtop">
+            <span class="freq" id="freq">FM 98.1</span>
+            <span class="signal" id="signal"><i style="height:4px"></i><i style="height:7px"></i><i style="height:10px"></i><i style="height:14px"></i></span>
+          </div>
+          <div class="clock idle" id="clock">0.0</div>
+          <div class="status" id="status">Loading…</div>
+        </div>
+        <div class="dial" id="dial"><div class="scale" id="scale"></div><div class="needle" id="needle"></div></div>
+        <div class="presets" id="presets"></div>
+      </div>
+      <div class="kw"><div class="knob" id="tuneKnob"></div><span>TUNE</span></div>
+    </div>
+
+    <div class="bar"><i id="barFill"></i></div>
+    <div class="controls"><button class="big" id="main" disabled>▶ Power on</button></div>
+
+    <div class="choices" id="choices"></div>
+
+    <div class="reveal" id="reveal">
+      <img id="cover" alt="">
+      <div style="flex:1;min-width:0">
+        <div class="v" id="rVerdict"></div>
+        <div class="t" id="rTitle"></div>
+        <div class="a" id="rArtist"></div>
+        <div class="y" id="rYear"></div>
+        <div class="m" id="rMeta"></div>
+        <div class="row"><button id="replay">↻ Hear more of it</button></div>
+      </div>
+    </div>
+
+    <div class="summary" id="summary">
+      <div>📻 End of the drive</div>
+      <div class="grid" id="sGrid"></div>
+      <div class="tot" id="sTotal"></div>
+      <div class="list" id="sList"></div>
+      <div class="row" style="justify-content:center">
+        <button id="copy">Copy result</button>
+        <button class="big" id="again" style="flex:none;font-size:16px;padding:12px 18px">Drive again</button>
+      </div>
+    </div>
+
+    <div class="score">
+      <span>Song <b id="songN">0</b>/<span id="roundLen">10</span></span>
+      <span>Right: <b id="rightN">0</b></span>
+      <span>Score: <b id="pts">0</b></span>
+    </div>
+  </div>
+
+  <div class="below">
+    <h3>More stations</h3>
+    <div class="stations" id="stations"></div>
+    <div class="row">
+      <input type="text" id="custom" placeholder="Or any playlist search: motown, grunge, yacht rock…">
+      <button id="tune">Tune</button>
+    </div>
+    <div class="msg" id="msg"></div>
+    <div class="hint">Presets 1–6 pick a decade. The clock starts when the song comes in — hit “Name it” (or space) the moment you know it.<br>
+    Points halve every 2.5s you listen (2,000 at 0s). Pick within 1.5s for full credit; wrong or too slow: −500. Under 2s = ⚡.<br>
+    The Radio Game v0.1 · car dash experiment · Nov 26, 2026 · <a href="../solo.html">original Radio Dial</a></div>
+  </div>
+</div>
+
+<script src="year.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+const ROUND_LEN = 10;      // songs per round
+const MAX_LISTEN = 15;     // seconds before the clock runs out
+const STATIC_SEC = 1.4;    // static before each song
+const CHOICES = 5;
+
+// Scoring (v2): speed is everything, but it has to be real recognition.
+const MAX_PTS = 2000;      // points for an instant answer
+const HALF_LIFE = 2.5;     // every 2.5s of listening halves the points
+const MIN_PTS = 25;        // floor for a correct answer
+const PICK_FULL = 1.5;     // pick within 1.5s of stopping = full points ("verified")
+const PICK_LIMIT = 4;      // after 4s of picking, it counts as a miss
+const WRONG = -500;        // wrong pick or too slow to pick
+const LIGHTNING = 2;       // verified correct under 2s = ⚡
+
+const STATIONS = [
+  ['60s', '60s hits'], ['70s', '70s hits'], ['80s', '80s hits'], ['90s', '90s hits'],
+  ['2000s', '2000s hits'], ['2010s', '2010s hits'], ['Classic rock', 'classic rock'],
+  ['One-hit wonders', 'one hit wonders'], ['Today’s chart', '__chart']
+];
+
+let tracks = [], idx = 0, stationName = '';
+// Deezer's preview links expire after a while. If the page has sat open (say, as a
+// home-screen app resumed days later), the song list is full of dead links, so we
+// quietly re-fetch the station before playing.
+const STALE_MS = 20 * 60 * 1000;
+let stationQ = null, loadedAt = 0;
+const isStale = () => stationQ && Date.now() - loadedAt > STALE_MS;
+
+let state = 'idle'; // idle → scanning → listening → answering → revealed → … → done
+let sweepId = 0, current = null, nextPrep = null;
+let t0 = 0, elapsed = 0, tickRaf = 0, limitTimer = 0, replayTimer = 0;
+let pickT0 = 0, pickRaf = 0, pickTimer = 0, choiceTimeUp = false;
+let songN = 0, rightN = 0, total = 0, results = [];
+
+/* ---------- Deezer via JSONP ---------- */
+function jsonp(url) {
+  return new Promise((resolve, reject) => {
+    const cb = 'dz' + Math.random().toString(36).slice(2);
+    const s = document.createElement('script');
+    const timer = setTimeout(() => { cleanup(); reject(new Error('timed out')); }, 10000);
+    function cleanup() { clearTimeout(timer); delete window[cb]; s.remove(); }
+    window[cb] = d => { cleanup(); (d && d.error) ? reject(new Error(d.error.message || 'API error')) : resolve(d); };
+    s.onerror = () => { cleanup(); reject(new Error('network error')); };
+    s.src = url + (url.includes('?') ? '&' : '?') + 'output=jsonp&callback=' + cb;
+    document.head.appendChild(s);
+  });
+}
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+
+async function loadStation(label, q) {
+  resetRound(); setState('idle');
+  setMsg(''); status('Tuning to ' + label + '…');
+  $('main').disabled = true;
+  try {
+    let list;
+    if (q === '__chart') {
+      list = (await jsonp('https://api.deezer.com/chart/0/tracks?limit=100')).data;
+    } else {
+      const p = await jsonp('https://api.deezer.com/search/playlist?q=' + encodeURIComponent(q));
+      if (!p.data || !p.data.length) throw new Error('no playlists found for “' + q + '”');
+      const pick = p.data[Math.floor(Math.random() * Math.min(3, p.data.length))];
+      list = (await jsonp('https://api.deezer.com/playlist/' + pick.id + '/tracks?limit=200')).data;
+    }
+    const fresh = shuffle((list || []).filter(t => t.preview && t.readable !== false));
+    if (fresh.length < ROUND_LEN + CHOICES) throw new Error('not enough playable songs — try another station');
+    tracks = fresh; idx = 0; stationName = label;
+    stationQ = [label, q]; loadedAt = Date.now();
+    pauseAll(); nextPrep = null; current = null;
+    status(label + ' · ' + tracks.length + ' songs');
+    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('sel', c.dataset.label === label));
+    $('main').disabled = false;
+  } catch (e) {
+    setMsg('Couldn’t tune in: ' + e.message);
+    status('No signal');
+    $('main').disabled = !tracks.length;
+  }
+}
+function nextTrack() {
+  if (idx >= tracks.length) { shuffle(tracks); idx = 0; }
+  return tracks[idx++];
+}
+
+/* ---------- Two reusable audio players (see README: iPhone unlock) ---------- */
+const players = [new Audio(), new Audio()];
+players.forEach(p => { p.preload = 'auto'; p.playsInline = true; });
+let playerTurn = 0, unlocked = false, unlockDone = Promise.resolve();
+const SILENCE = makeSilence();
+function makeSilence() {
+  const rate = 8000, n = 800, buf = new ArrayBuffer(44 + n), v = new DataView(buf);
+  const str = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  str(0, 'RIFF'); v.setUint32(4, 36 + n, true); str(8, 'WAVE'); str(12, 'fmt ');
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate, true);
+  v.setUint16(32, 1, true); v.setUint16(34, 8, true);
+  str(36, 'data'); v.setUint32(40, n, true);
+  for (let i = 0; i < n; i++) v.setUint8(44 + i, 128);
+  return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+}
+function unlockPlayers() {
+  if (unlocked) return;
+  unlocked = true;
+  unlockDone = Promise.allSettled(players.map(p => { p.src = SILENCE; return p.play().then(() => p.pause()); }));
+}
+function pauseAll() { players.forEach(p => p.pause()); }
+const canFade = (() => { const a = new Audio(); a.volume = 0.5; return a.volume === 0.5; })();
+const once = (el, ev, ms) => new Promise(r => {
+  const t = setTimeout(r, ms);
+  el.addEventListener(ev, () => { clearTimeout(t); r(); }, { once: true });
+});
+function fadeVol(a, to, ms) {
+  clearInterval(a._fade);
+  const from = a.volume, t1 = performance.now();
+  a._fade = setInterval(() => {
+    const k = Math.min(1, (performance.now() - t1) / ms);
+    a.volume = from + (to - from) * k;
+    if (k >= 1) clearInterval(a._fade);
+  }, 16);
+}
+
+// Start somewhere in the preview, leaving room for the full listening window.
+function randomStart(a) {
+  const maxStart = Math.max(0, Math.min((a.duration || 30) - MAX_LISTEN - 0.5, 14));
+  return Math.random() * maxStart;
+}
+function prepare(track) {
+  const a = players[playerTurn]; playerTurn = 1 - playerTurn;
+  const tok = a._tok = {};
+  a.pause(); a.muted = true;
+  return new Promise(resolve => {
+    let done = false;
+    const finish = (ok, start) => { if (!done) { done = true; resolve({ track, audio: a, start, ok, tok }); } };
+    a.addEventListener('loadedmetadata', () => {
+      if (a._tok !== tok || done) return;
+      const start = randomStart(a);
+      a.currentTime = start;
+      a.addEventListener('seeked', () => { if (a._tok === tok) finish(true, start); }, { once: true });
+      setTimeout(() => finish(true, start), 2500);
+    }, { once: true });
+    a.addEventListener('error', () => { if (a._tok === tok) finish(false); }, { once: true });
+    a.src = track.preview;
+    a.load();
+    setTimeout(() => finish(true, null), 4000);
+  });
+}
+
+/* ---------- Static ---------- */
+let ctx, noiseGain, bp;
+function initAudio() {
+  if (ctx) { ctx.resume(); return; }
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const len = ctx.sampleRate * 2;
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (Math.random() < 0.002 ? 2.5 : 0.7);
+  const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+  bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2200; bp.Q.value = 0.7;
+  noiseGain = ctx.createGain(); noiseGain.gain.value = 0;
+  src.connect(bp).connect(noiseGain).connect(ctx.destination);
+  src.start();
+}
+function noiseTo(v, t = 0.15) {
+  if (!ctx) return;
+  const g = noiseGain.gain, now = ctx.currentTime;
+  g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(v, now + t);
+}
+function wobble(sec) {
+  if (!ctx) return;
+  const f = bp.frequency, now = ctx.currentTime;
+  f.cancelScheduledValues(now); f.setValueAtTime(f.value, now);
+  for (let t = 0.15; t < sec; t += 0.15) f.linearRampToValueAtTime(800 + Math.random() * 3500, now + t);
+}
+
+/* ---------- One song: static → song + clock → Name it ---------- */
+async function nextSong(tries = 0) {
+  const id = ++sweepId;
+  setState('scanning');
+  hide('choices'); hide('reveal');
+  setClock(0, true);
+  await unlockDone;
+  if (id !== sweepId) return;
+  if (!nextPrep) nextPrep = prepare(nextTrack());
+
+  status('Scanning…'); setLive(false);
+  moveNeedle(); wobble(STATIC_SEC); noiseTo(0.35, 0.08);
+  const [prep] = await Promise.all([nextPrep, sleep(STATIC_SEC * 1000)]);
+  if (id !== sweepId) return;
+  nextPrep = prepare(nextTrack());
+  if (!prep.ok || prep.audio._tok !== prep.tok) return tries < 5 ? nextSong(tries + 1) : giveUp();
+
+  const a = prep.audio;
+  a.muted = true; a.volume = canFade ? 0 : 1;
+  try { await a.play(); } catch (e) { return tries < 5 ? nextSong(tries + 1) : giveUp(); }
+  if (prep.start == null) {
+    if (a.readyState < 1) await once(a, 'loadedmetadata', 3000);
+    prep.start = randomStart(a);
+    a.currentTime = prep.start;
+    await once(a, 'seeked', 1500);
+  }
+  if (id !== sweepId) { a.pause(); return; }
+
+  current = prep; songN++; updScore();
+  RadioYear.originalYear(prep.track); // start the year lookup now, so it's ready at reveal
+  a.muted = false;
+  setLive(true); status('Signal!');
+  noiseTo(0.02, canFade ? 0.25 : 0.05);
+  if (canFade) fadeVol(a, 1, 250);
+
+  // The clock starts the moment the song is audible.
+  setState('listening');
+  t0 = performance.now();
+  tick();
+  limitTimer = setTimeout(() => stopClock(true), MAX_LISTEN * 1000);
+}
+function giveUp() {
+  loadedAt = 0; // force a fresh song list next time
+  setMsg('Having trouble pulling in songs — tap Power on to re-tune, or pick another station.');
+  setState('idle');
+}
+
+function tick() {
+  elapsed = (performance.now() - t0) / 1000;
+  setClock(Math.min(elapsed, MAX_LISTEN), false);
+  if (state === 'listening') tickRaf = requestAnimationFrame(tick);
+}
+function stopClock(timeUp) {
+  if (state !== 'listening') return;
+  cancelAnimationFrame(tickRaf); clearTimeout(limitTimer);
+  elapsed = timeUp ? MAX_LISTEN : (performance.now() - t0) / 1000;
+  setClock(elapsed, false);
+  pauseAll(); noiseTo(0, 0.1); setLive(false);
+  status(timeUp ? 'Time’s up — take a guess' : 'Stopped at ' + elapsed.toFixed(1) + 's');
+  setState('answering');
+  showChoices(timeUp);
+}
+
+function showChoices(timeUp) {
+  const right = current.track;
+  // Wrong answers come from the same station, so they're the same era/genre.
+  // Prefer different artists so the choice isn't a giveaway.
+  const used = new Set([right.artist.name.toLowerCase()]);
+  const same = t => RadioYear.cleanTitle(t.title).toLowerCase() === RadioYear.cleanTitle(right.title).toLowerCase();
+  const pool = shuffle(tracks.filter(t => t.id !== right.id && !same(t)));
+  const wrong = [];
+  for (const t of pool) {
+    const n = t.artist.name.toLowerCase();
+    if (!used.has(n)) { used.add(n); wrong.push(t); }
+    if (wrong.length === CHOICES - 1) break;
+  }
+  for (const t of pool) { if (wrong.length >= CHOICES - 1) break; if (!wrong.includes(t)) wrong.push(t); }
+  const options = shuffle([right, ...wrong]);
+
+  const box = $('choices'); box.innerHTML = '';
+  const q = document.createElement('div'); q.className = 'q';
+  q.textContent = timeUp ? 'Time’s up — pick fast:' : 'What was it? Pick fast — the bar is draining.';
+  box.appendChild(q);
+  options.forEach(t => {
+    const b = document.createElement('button');
+    b.className = 'choice';
+    b.innerHTML = '<span></span><br><small></small>';
+    b.querySelector('span').textContent = RadioYear.cleanTitle(t.title);
+    b.querySelector('small').textContent = t.artist.name;
+    b.onclick = () => answer(t, b);
+    b._track = t;
+    box.appendChild(b);
+  });
+  box.classList.add('show');
+
+  // The pick clock: stopping the song doesn't buy free thinking time.
+  choiceTimeUp = timeUp;
+  pickT0 = performance.now();
+  $('barFill').style.background = 'var(--red)';
+  const drain = () => {
+    const p = (performance.now() - pickT0) / 1000;
+    $('barFill').style.width = Math.max(0, 100 - p / PICK_LIMIT * 100) + '%';
+    if (state === 'answering') pickRaf = requestAnimationFrame(drain);
+  };
+  drain();
+  pickTimer = setTimeout(() => answer(null, null), PICK_LIMIT * 1000);
+}
+
+// Listening time → points: 2000 × ½^(seconds ÷ 2.5)
+function speedPoints(sec) { return Math.max(MIN_PTS, Math.round(MAX_PTS * Math.pow(0.5, sec / HALF_LIFE))); }
+// Picking time → multiplier: ×1 up to 1.5s, sliding to ×0.5 at 4s
+function pickMult(sec) {
+  if (sec <= PICK_FULL) return 1;
+  return Math.max(0.5, 1 - 0.5 * (sec - PICK_FULL) / (PICK_LIMIT - PICK_FULL));
+}
+
+function answer(pick, btn) {
+  if (state !== 'answering') return;
+  cancelAnimationFrame(pickRaf); clearTimeout(pickTimer);
+  const timeUp = choiceTimeUp;
+  const pickTime = Math.min(PICK_LIMIT, (performance.now() - pickT0) / 1000);
+  const right = current.track, ok = !!pick && pick.id === right.id;
+  const mult = pickMult(pickTime);
+  const pts = ok ? Math.round((timeUp ? MIN_PTS : speedPoints(elapsed)) * mult) : WRONG;
+  const lightning = ok && !timeUp && elapsed < LIGHTNING && pickTime <= PICK_FULL;
+  total += pts; if (ok) rightN++;
+  results.push({ ok, elapsed, timeUp, pts, pickTime, lightning, track: right });
+  updScore();
+
+  document.querySelectorAll('.choice').forEach(b => {
+    b.disabled = true;
+    if (b._track.id === right.id) b.classList.add('right');
+  });
+  if (btn && !ok) btn.classList.add('wrong');
+
+  const slow = mult < 1 ? ' (slow pick ×' + mult.toFixed(2) + ')' : '';
+  $('rVerdict').textContent =
+    lightning ? '⚡ LIGHTNING · ' + elapsed.toFixed(1) + 's · +' + pts.toLocaleString()
+    : ok && timeUp ? '✓ After the buzzer · +' + pts + slow
+    : ok ? '✓ ' + elapsed.toFixed(1) + 's · +' + pts.toLocaleString() + slow
+    : !pick ? '⏱ Too slow to pick · ' + WRONG
+    : '✗ Not that one · ' + WRONG;
+  $('rVerdict').style.color = lightning ? 'var(--glow)' : ok ? '#7fe08f' : '#ff8a7a';
+  if (lightning) { $('clock').classList.remove('flash'); void $('clock').offsetWidth; $('clock').classList.add('flash'); }
+  $('rTitle').textContent = RadioYear.cleanTitle(right.title);
+  $('rArtist').textContent = right.artist.name;
+  $('rMeta').textContent = right.album ? right.album.title : '';
+  $('cover').src = (right.album && right.album.cover_medium) || '';
+  const prep = current, row = results[results.length - 1];
+  showYear(right, () => current === prep, r => { row.year = r.year; row.yearSure = r.sure; });
+  show('reveal');
+
+  setState(songN >= ROUND_LEN ? 'lastReveal' : 'revealed');
+}
+
+function replay() {
+  if (!current) return;
+  const a = current.audio;
+  clearTimeout(replayTimer);
+  a.currentTime = current.start || 0; a.volume = 1; a.muted = false;
+  a.play().catch(() => {});
+  replayTimer = setTimeout(() => a.pause(), 12000);
+}
+
+/* ---------- Round ---------- */
+function resetRound() {
+  sweepId++; pauseAll(); noiseTo(0, 0.1);
+  cancelAnimationFrame(tickRaf); clearTimeout(limitTimer); clearTimeout(replayTimer);
+  cancelAnimationFrame(pickRaf); clearTimeout(pickTimer);
+  songN = 0; rightN = 0; total = 0; results = [];
+  updScore(); hide('choices'); hide('reveal'); hide('summary');
+  setClock(0, true); setLive(false);
+}
+async function startRound() {
+  if (!tracks.length) return;
+  unlockPlayers(); // must happen inside the tap (iPhone)
+  initAudio();
+  if (isStale()) {
+    await loadStation(...stationQ);
+    if (!tracks.length) return;
+  }
+  resetRound();
+  $('dial').classList.add('on');
+  nextSong();
+}
+function emoji(r) {
+  if (!r.ok) return '🟥';
+  if (r.lightning) return '⚡';
+  if (r.timeUp) return '⬜';
+  return r.elapsed < 4 ? '🟩' : r.elapsed < 8 ? '🟨' : '🟧';
+}
+function showSummary() {
+  pauseAll(); clearTimeout(replayTimer);
+  hide('choices'); hide('reveal');
+  setState('done'); status('Round over');
+  $('sGrid').textContent = results.map(emoji).join('');
+  const bolts = results.filter(r => r.lightning).length;
+  const fastest = results.filter(r => r.ok && !r.timeUp).reduce((m, r) => Math.min(m, r.elapsed), Infinity);
+  $('sTotal').textContent = total.toLocaleString() + ' pts · ' + rightN + '/' + ROUND_LEN +
+    (bolts ? ' · ⚡×' + bolts : '') + (isFinite(fastest) ? ' · fastest ' + fastest.toFixed(1) + 's' : '');
+  const list = $('sList'); list.innerHTML = '';
+  results.forEach(r => {
+    const d = document.createElement('div');
+    d.textContent = emoji(r) + ' ' + (r.ok && !r.timeUp ? r.elapsed.toFixed(1) + 's  ' : '');
+    const s = document.createElement('span'); s.textContent = RadioYear.cleanTitle(r.track.title);
+    d.appendChild(s); d.appendChild(document.createTextNode(' — ' + r.track.artist.name + (r.year ? ' · ' + r.year + (r.yearSure ? '' : '?') : '')));
+    list.appendChild(d);
+  });
+  show('summary');
+}
+function shareText() {
+  const fastest = results.filter(r => r.ok && !r.timeUp).reduce((m, r) => Math.min(m, r.elapsed), Infinity);
+  return '🚗📻 The Radio Game · ' + stationName + '\n' + results.map(emoji).join('') +
+    '\n' + rightN + '/' + ROUND_LEN + ' · ' + total.toLocaleString() + ' pts' +
+    (isFinite(fastest) ? ' · fastest ' + fastest.toFixed(1) + 's' : '');
+}
+
+/* ---------- The one big button changes job with the state ---------- */
+function setState(s) {
+  state = s;
+  // The road only moves while you're driving (playing).
+  document.body.classList.toggle('driving', s !== 'idle' && s !== 'done');
+  const m = $('main');
+  const labels = {
+    idle: ['▶ Power on', false, ''],
+    scanning: ['… tuning', true, 'stop'],
+    listening: ['✋ Name it! (space)', false, 'stop'],
+    answering: ['Pick fast ↓', true, ''],
+    revealed: ['Next station ▶ (space)', false, ''],
+    lastReveal: ['See results ▶ (space)', false, ''],
+    done: ['▶ Drive again', false, '']
+  };
+  const [text, dis, cls] = labels[s];
+  m.textContent = text; m.disabled = dis || !tracks.length;
+  m.className = 'big' + (cls ? ' ' + cls : '');
+  if (s === 'idle' || s === 'done') $('dial').classList.remove('on');
+}
+function mainAction() {
+  if (state === 'idle' || state === 'done') startRound();
+  else if (state === 'listening') stopClock(false);
+  else if (state === 'revealed') { clearTimeout(replayTimer); pauseAll(); nextSong(); }
+  else if (state === 'lastReveal') showSummary();
+}
+
+// Show the ORIGINAL release year (see year.js), not the remaster/compilation year.
+function showYear(track, stillCurrent, onYear) {
+  const el = $('rYear');
+  el.className = 'y unsure'; el.textContent = '····';
+  RadioYear.originalYear(track).then(r => {
+    if (!stillCurrent()) return;
+    if (!r) { el.textContent = ''; return; }
+    el.className = r.sure ? 'y' : 'y unsure';
+    el.innerHTML = r.year + (r.sure ? '' : ' <small>(may be a reissue date)</small>');
+    if (onYear) onYear(r);
+  });
+}
+
+/* ---------- UI helpers ---------- */
+function moveNeedle() {
+  const f = Math.round((88 + Math.random() * 20) * 10) / 10;
+  $('needle').style.left = pos(f) + '%';
+  $('freq').textContent = 'FM ' + f.toFixed(1);
+  // Turn the TUNE knob along with the needle: about 13° per MHz.
+  $('tuneKnob').style.setProperty('--rot', ((f - 98) * 13).toFixed(1) + 'deg');
+}
+const pos = f => (f - 87.5) / 21 * 100;
+function setClock(sec, idle) {
+  $('clock').textContent = sec.toFixed(1);
+  $('clock').classList.toggle('idle', idle);
+  $('barFill').style.background = '';
+  $('barFill').style.width = (idle ? 0 : Math.min(100, sec / MAX_LISTEN * 100)) + '%';
+}
+function status(s) { $('status').textContent = s; }
+function setMsg(s) { $('msg').textContent = s; }
+function setLive(on) { $('signal').classList.toggle('live', on); }
+function show(id) { $(id).classList.add('show'); }
+function hide(id) { $(id).classList.remove('show'); }
+function updScore() { $('songN').textContent = songN; $('rightN').textContent = rightN; $('pts').textContent = total.toLocaleString(); }
+
+function buildScale() {
+  const sc = $('scale');
+  for (let f = 88; f <= 108; f++) {
+    const t = document.createElement('div');
+    t.className = 'tick'; t.style.left = pos(f) + '%'; t.style.height = (f % 2 ? 14 : 26) + 'px';
+    sc.appendChild(t);
+    if (f % 2 === 0 && f < 108) {
+      const l = document.createElement('div');
+      l.className = 'lbl'; l.style.left = pos(f) + '%'; l.textContent = f;
+      sc.appendChild(l);
+    }
+  }
+  $('needle').style.left = pos(98.1) + '%';
+}
+// The first six stations become the radio's preset buttons; the rest go below.
+function buildStations() {
+  STATIONS.forEach(([label, q], i) => {
+    const b = document.createElement('button');
+    b.dataset.label = label;
+    b.onclick = () => loadStation(label, q);
+    if (i < 6) {
+      b.className = 'chip preset';
+      b.innerHTML = (i + 1) + '<small></small>';
+      b.querySelector('small').textContent = label;
+      $('presets').appendChild(b);
+    } else {
+      b.className = 'chip'; b.textContent = label;
+      $('stations').appendChild(b);
+    }
+  });
+}
+
+$('main').onclick = mainAction;
+$('replay').onclick = replay;
+$('again').onclick = startRound;
+$('copy').onclick = () => {
+  navigator.clipboard.writeText(shareText())
+    .then(() => { $('copy').textContent = 'Copied ✓'; setTimeout(() => $('copy').textContent = 'Copy result', 1500); })
+    .catch(() => setMsg('Couldn’t copy — long-press the result to select it.'));
+};
+$('tune').onclick = () => { const q = $('custom').value.trim(); if (q) loadStation(q, q); };
+$('custom').addEventListener('keydown', e => { if (e.key === 'Enter') $('tune').click(); });
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.code === 'Space') { e.preventDefault(); if (!$('main').disabled) mainAction(); }
+  // Number keys 1–5 pick an answer on a keyboard
+  if (state === 'answering' && /^[1-5]$/.test(e.key)) {
+    const b = document.querySelectorAll('.choice')[+e.key - 1];
+    if (b) b.click();
+  }
+});
+$('roundLen').textContent = ROUND_LEN;
+
+buildScale();
+buildStations();
+setState('idle');
+loadStation('80s', '80s hits');
+</script>
+</body>
+</html>
