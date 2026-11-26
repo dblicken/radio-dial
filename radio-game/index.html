@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Radio Game">
 <title>The Radio Game</title>
 <style>
-:root{--bg:#0b0b0d;--brass:#2aa866;--glow:#3ed686;--text:#ece8e2;--dim:#8f8b86;--red:#c0261d;--green:#2f8a45}
+:root{--bg:#0b0b0d;--brass:#22905a;--glow:#2fb870;--text:#ece8e2;--dim:#8f8b86;--red:#c0261d;--green:#2f8a45}
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(circle at 50% 0,#202024,var(--bg) 70%);color:var(--text);min-height:100vh;display:flex;justify-content:center;padding:20px}
 .wrap{width:100%;max-width:720px}
@@ -18,12 +18,12 @@ h1{font-family:Georgia,serif;font-weight:normal;letter-spacing:.14em;font-size:c
 h3{font-size:14px;color:var(--dim);font-weight:600;margin:18px 0 4px;letter-spacing:.05em;text-transform:uppercase}
 .radio{background:linear-gradient(#232327,#0f0f12);border:2px solid #000;border-radius:18px;padding:18px;box-shadow:0 10px 40px #000c,inset 0 0 0 1px #34343a,inset 0 1px 0 #ffffff1a}
 .dial{position:relative;height:90px;background:linear-gradient(#0d0d10,#060608);border:1px solid #000;border-radius:10px;overflow:hidden;box-shadow:inset 0 0 18px #000;transition:background .4s,box-shadow .4s}
-.dial.on{background:linear-gradient(#06130b,#030a06);box-shadow:inset 0 0 26px #3ed68633,0 0 14px #3ed68622}
+.dial.on{background:linear-gradient(#06130b,#030a06);box-shadow:inset 0 0 26px #2fb87033,0 0 14px #2fb87022}
 .scale{position:absolute;inset:0}
 .tick{position:absolute;bottom:0;width:1px;background:#22402e}
-.dial.on .tick{background:#33a36a}
+.dial.on .tick{background:#2a8c5a}
 .lbl{position:absolute;top:10px;transform:translateX(-50%);font:600 13px Georgia,serif;color:#2c5a3f}
-.dial.on .lbl{color:var(--glow);text-shadow:0 0 6px #3ed68699}
+.dial.on .lbl{color:var(--glow);text-shadow:0 0 6px #2fb87099}
 .needle{position:absolute;top:0;bottom:0;width:3px;margin-left:-1px;background:var(--red);box-shadow:0 0 6px var(--red);left:50%;transition:left .9s cubic-bezier(.4,.1,.3,1)}
 .readout{display:flex;justify-content:space-between;align-items:center;margin:12px 2px 0;font-family:"Courier New",monospace;color:var(--glow);gap:10px}
 .freq{font-size:22px;letter-spacing:.05em}
@@ -31,7 +31,7 @@ h3{font-size:14px;color:var(--dim);font-weight:600;margin:18px 0 4px;letter-spac
 .signal{display:flex;gap:3px;align-items:flex-end;height:20px}
 .signal i{width:5px;background:#3a3530;border-radius:1px;transition:background .15s}
 .signal.live i{background:var(--glow)}
-.clock{font-family:"Courier New",monospace;font-size:54px;text-align:center;color:var(--glow);margin:10px 0 0;letter-spacing:.04em;text-shadow:0 0 12px #3ed68655}
+.clock{font-family:"Courier New",monospace;font-size:54px;text-align:center;color:var(--glow);margin:10px 0 0;letter-spacing:.04em;text-shadow:0 0 12px #2fb87055}
 .clock.idle{color:#3e3a35;text-shadow:none}
 .clock.flash{animation:flash .9s ease-out}
 @keyframes flash{0%{color:#fff;text-shadow:0 0 30px #fff,0 0 60px var(--glow);transform:scale(1.15)}100%{transform:scale(1)}}
@@ -142,7 +142,7 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
   <div class="hint">The clock starts when the song comes in. Hit “Name it” (or space) the moment you know it.<br>
   Points halve every 2.5s you listen (2,000 at 0s). Then pick within 1.5s for full credit — the bar drains for 4s.<br>
   Wrong or too slow: −500. Correct under 2s with a quick pick = ⚡ Lightning. Clips are Deezer’s 30-second previews.<br>
-  The Radio Game v0.5 · black dash, deeper green · Nov 26, 2026</div>
+  The Radio Game v0.6 · black dash, dark green · Nov 26, 2026</div>
 </div>
 
 <script src="year.js"></script>
