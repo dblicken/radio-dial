@@ -42,7 +42,10 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;font:in
 button:hover:not(:disabled){filter:brightness(1.15)}
 button:disabled{opacity:.4;cursor:default}
 .big{flex:1;font-size:20px;padding:18px;background:var(--brass);color:#03140a;font-weight:700;min-width:200px}
-.stop{background:var(--red);color:#fff}
+.stop{background:linear-gradient(#f39a35,#d4701a);color:#1a0d02;border-top:1px solid #ffd29a66;
+  box-shadow:0 4px 0 #6e3a0b,0 6px 14px #000a}
+.stop:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 #6e3a0b,0 2px 6px #000a}
+.big small{font-weight:600;opacity:.55;font-size:.7em}
 .choices{display:none;flex-direction:column;gap:8px;margin-top:14px}
 .choices.show{display:flex}
 .choices .q{color:var(--dim);font-size:14px}
@@ -145,7 +148,7 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
 
   <div class="hint">Tap “Name it” if you know it, then pick fast.<br>
   Faster = more points · a wrong pick costs 500 · under 2s = ⚡<br>
-  v1.0 · runs of 5 or 10 · Nov 26, 2026</div>
+  v1.1 · new Name it button · Nov 26, 2026</div>
 </div>
 
 <script src="year.js"></script>
@@ -550,20 +553,25 @@ function shareText() {
 }
 
 /* ---------- The one big button changes job with the state ---------- */
+const HAS_KEYBOARD = matchMedia('(hover: hover) and (pointer: fine)').matches;
 function setState(s) {
   state = s;
   const m = $('main');
   const labels = {
     idle: ['▶ Power on', false, ''],
     scanning: ['… tuning', true, 'stop'],
-    listening: ['✋ Name it! (space)', false, 'stop'],
+    listening: ['Name it!', false, 'stop'],
     answering: ['Pick fast ↓', true, ''],
-    revealed: ['Next station ▶ (space)', false, ''],
-    lastReveal: ['See results ▶ (space)', false, ''],
+    revealed: ['Next station ▶', false, ''],
+    lastReveal: ['See results ▶', false, ''],
     done: ['▶ Play again', false, '']
   };
   const [text, dis, cls] = labels[s];
   m.textContent = text; m.disabled = dis || !tracks.length;
+  // Show the space-bar hint only on devices with a real keyboard and mouse.
+  if (HAS_KEYBOARD && (s === 'listening' || s === 'revealed' || s === 'lastReveal')) {
+    const k = document.createElement('small'); k.textContent = ' (space)'; m.appendChild(k);
+  }
   m.className = 'big' + (cls ? ' ' + cls : '');
   if (s === 'idle' || s === 'done') $('dial').classList.remove('on');
 }
