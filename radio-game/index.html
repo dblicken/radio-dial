@@ -54,7 +54,7 @@ button:disabled{opacity:.4;cursor:default}
 .choice small{color:var(--dim);font-size:13px}
 /* While picking: hide the dial and the button so all five choices sit right
    under the clock, where your thumb already is — no scrolling against the clock. */
-body.picking .dial, body.picking .controls, body.picking .choices .q{display:none}
+body.compact .dial, body.picking .controls, body.picking .choices .q{display:none}
 body.picking .choices{margin-top:12px;gap:6px}
 .choice.right{background:var(--green);color:#fff}
 .choice.right small{color:#e0ffe6}
@@ -153,7 +153,7 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
 
   <div class="hint">Tap “Name it” if you know it, then pick fast.<br>
   Faster = more points · a wrong pick costs 500 · under 2s = ⚡<br>
-  v1.2 · choices fit on screen · Nov 26, 2026</div>
+  v1.3 · answer card fits on screen · Nov 26, 2026</div>
 </div>
 
 <script src="year.js"></script>
@@ -481,7 +481,7 @@ function answer(pick, btn) {
     : ok && timeUp ? '✓ After the buzzer · +' + pts + slow
     : ok ? '✓ ' + elapsed.toFixed(1) + 's · +' + pts.toLocaleString() + slow
     : !pick ? '⏱ Too slow to pick · ' + WRONG
-    : '✗ Not that one · ' + WRONG;
+    : '✗ You picked “' + RadioYear.cleanTitle(pick.title) + '” · ' + WRONG;
   $('rVerdict').style.color = lightning ? 'var(--glow)' : ok ? '#7fe08f' : '#ff8a7a';
   if (lightning) { $('clock').classList.remove('flash'); void $('clock').offsetWidth; $('clock').classList.add('flash'); }
   $('rTitle').textContent = RadioYear.cleanTitle(right.title);
@@ -490,7 +490,13 @@ function answer(pick, btn) {
   $('cover').src = (right.album && right.album.cover_medium) || '';
   const prep = current, row = results[results.length - 1];
   showYear(right, () => current === prep, r => { row.year = r.year; row.yearSure = r.sure; });
-  show('reveal');
+  // Flash green/red on the choices for a moment, then fold them away and show the answer card.
+  const shownFor = current;
+  setTimeout(() => {
+    if (current !== shownFor || (state !== 'revealed' && state !== 'lastReveal')) return;
+    hide('choices'); show('reveal');
+    $('reveal').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, 700);
 
   setState(songN >= ROUND_LEN ? 'lastReveal' : 'revealed');
 }
@@ -563,6 +569,8 @@ const HAS_KEYBOARD = matchMedia('(hover: hover) and (pointer: fine)').matches;
 function setState(s) {
   state = s;
   document.body.classList.toggle('picking', s === 'answering');
+  // Keep the dial tucked away through the reveal too, so the answer card fits on screen.
+  document.body.classList.toggle('compact', s === 'answering' || s === 'revealed' || s === 'lastReveal');
   const m = $('main');
   const labels = {
     idle: ['▶ Power on', false, ''],
