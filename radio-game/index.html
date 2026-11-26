@@ -3,53 +3,55 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#1b1410">
+<meta name="theme-color" content="#0b0b0d">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Radio Game">
 <title>The Radio Game</title>
 <style>
-:root{--bg:#1b1410;--brass:#d9a441;--glow:#ffcf6b;--text:#f3e6d0;--dim:#a8957a;--red:#c0261d;--green:#2f8a45}
+:root{--bg:#0b0b0d;--brass:#e8a13c;--glow:#ffb347;--text:#ece8e2;--dim:#8f8b86;--red:#c0261d;--green:#2f8a45}
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(circle at 50% 0,#3a2a1e,var(--bg) 70%);color:var(--text);min-height:100vh;display:flex;justify-content:center;padding:20px}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(circle at 50% 0,#202024,var(--bg) 70%);color:var(--text);min-height:100vh;display:flex;justify-content:center;padding:20px}
 .wrap{width:100%;max-width:720px}
-h1{font-family:Georgia,serif;font-weight:normal;letter-spacing:.2em;text-align:center;color:var(--brass);margin:4px 0 4px}
+h1{font-family:Georgia,serif;font-weight:normal;letter-spacing:.14em;font-size:clamp(22px,7vw,34px);white-space:nowrap;text-align:center;color:var(--brass);margin:4px 0 4px}
 .sub{text-align:center;color:var(--dim);font-size:14px;margin-bottom:14px}
 .sub a{color:var(--dim)}
 h3{font-size:14px;color:var(--dim);font-weight:600;margin:18px 0 4px;letter-spacing:.05em;text-transform:uppercase}
-.radio{background:linear-gradient(#3b2b20,#251b14);border:2px solid #4a3828;border-radius:18px;padding:18px;box-shadow:0 10px 40px #000a,inset 0 1px 0 #ffffff14}
-.dial{position:relative;height:90px;background:linear-gradient(#c9b48a,#b39a68);border-radius:10px;overflow:hidden;box-shadow:inset 0 0 18px #5a4020;transition:background .4s,box-shadow .4s}
-.dial.on{background:linear-gradient(#ffe9b8,#f2cf8a);box-shadow:inset 0 0 30px #ffb84d,0 0 18px #ffb84d55}
+.radio{background:linear-gradient(#232327,#0f0f12);border:2px solid #000;border-radius:18px;padding:18px;box-shadow:0 10px 40px #000c,inset 0 0 0 1px #34343a,inset 0 1px 0 #ffffff1a}
+.dial{position:relative;height:90px;background:linear-gradient(#0d0d10,#060608);border:1px solid #000;border-radius:10px;overflow:hidden;box-shadow:inset 0 0 18px #000;transition:background .4s,box-shadow .4s}
+.dial.on{background:linear-gradient(#141008,#0a0805);box-shadow:inset 0 0 26px #ffb34733,0 0 14px #ffb34722}
 .scale{position:absolute;inset:0}
-.tick{position:absolute;bottom:0;width:1px;background:#5a3f1c}
-.lbl{position:absolute;top:10px;transform:translateX(-50%);font:600 13px Georgia,serif;color:#5a3f1c}
+.tick{position:absolute;bottom:0;width:1px;background:#5c4424}
+.dial.on .tick{background:#c48a3e}
+.lbl{position:absolute;top:10px;transform:translateX(-50%);font:600 13px Georgia,serif;color:#6b4f2a}
+.dial.on .lbl{color:var(--glow);text-shadow:0 0 6px #ffb34799}
 .needle{position:absolute;top:0;bottom:0;width:3px;margin-left:-1px;background:var(--red);box-shadow:0 0 6px var(--red);left:50%;transition:left .9s cubic-bezier(.4,.1,.3,1)}
 .readout{display:flex;justify-content:space-between;align-items:center;margin:12px 2px 0;font-family:"Courier New",monospace;color:var(--glow);gap:10px}
 .freq{font-size:22px;letter-spacing:.05em}
 .status{font-size:14px;color:var(--dim);text-align:center;flex:1}
 .signal{display:flex;gap:3px;align-items:flex-end;height:20px}
-.signal i{width:5px;background:#5a4630;border-radius:1px;transition:background .15s}
+.signal i{width:5px;background:#3a3530;border-radius:1px;transition:background .15s}
 .signal.live i{background:var(--glow)}
 .clock{font-family:"Courier New",monospace;font-size:54px;text-align:center;color:var(--glow);margin:10px 0 0;letter-spacing:.04em;text-shadow:0 0 12px #ffb84d55}
-.clock.idle{color:#5a4630;text-shadow:none}
+.clock.idle{color:#3e3a35;text-shadow:none}
 .clock.flash{animation:flash .9s ease-out}
 @keyframes flash{0%{color:#fff;text-shadow:0 0 30px #fff,0 0 60px var(--glow);transform:scale(1.15)}100%{transform:scale(1)}}
-.bar{height:6px;background:#3a2b1f;border-radius:3px;overflow:hidden;margin-top:6px}
+.bar{height:6px;background:#26262b;border-radius:3px;overflow:hidden;margin-top:6px}
 .bar i{display:block;height:100%;width:0;background:var(--brass)}
 .controls{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
-button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;font:inherit;border:0;border-radius:10px;padding:12px 16px;cursor:pointer;background:#4a3828;color:var(--text)}
+button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;font:inherit;border:0;border-radius:10px;padding:12px 16px;cursor:pointer;background:#2c2c32;color:var(--text)}
 button:hover:not(:disabled){filter:brightness(1.15)}
 button:disabled{opacity:.4;cursor:default}
-.big{flex:1;font-size:20px;padding:18px;background:var(--brass);color:#2a1a08;font-weight:700;min-width:200px}
+.big{flex:1;font-size:20px;padding:18px;background:var(--brass);color:#1a1206;font-weight:700;min-width:200px}
 .stop{background:var(--red);color:#fff}
 .choices{display:none;flex-direction:column;gap:8px;margin-top:14px}
 .choices.show{display:flex}
 .choices .q{color:var(--dim);font-size:14px}
-.choice{text-align:left;padding:14px 16px;background:#3a2b1f;font-size:16px;line-height:1.3}
+.choice{text-align:left;padding:14px 16px;background:#1f1f24;border:1px solid #2e2e35;font-size:16px;line-height:1.3}
 .choice small{color:var(--dim)}
 .choice.right{background:var(--green);color:#fff}
 .choice.right small{color:#e0ffe6}
 .choice.wrong{background:var(--red);color:#fff}
-.reveal{display:none;margin-top:14px;background:#1e1610;border:1px solid #4a3828;border-radius:14px;padding:14px;gap:14px;align-items:center}
+.reveal{display:none;margin-top:14px;background:#141417;border:1px solid #2e2e35;border-radius:14px;padding:14px;gap:14px;align-items:center}
 .reveal.show{display:flex}
 .reveal img{width:84px;height:84px;border-radius:8px;object-fit:cover;background:#333;flex:none}
 .reveal .v{font-weight:700;font-size:15px}
@@ -62,11 +64,11 @@ button:disabled{opacity:.4;cursor:default}
 .score{display:flex;justify-content:space-between;margin-top:14px;font-size:15px;color:var(--dim)}
 .score b{color:var(--text)}
 .stations{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
-.chip{padding:8px 12px;border-radius:20px;background:#3a2b1f;font-size:14px}
-.chip.sel{background:var(--brass);color:#2a1a08}
+.chip{padding:8px 12px;border-radius:20px;background:#1f1f24;font-size:14px}
+.chip.sel{background:var(--brass);color:#1a1206}
 .row{display:flex;gap:8px;margin-top:8px}
-input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px solid #4a3828;background:#1e1610;color:var(--text);font:inherit}
-.summary{display:none;margin-top:14px;background:#1e1610;border:1px solid #4a3828;border-radius:14px;padding:16px;text-align:center}
+input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px solid #2e2e35;background:#141417;color:var(--text);font:inherit}
+.summary{display:none;margin-top:14px;background:#141417;border:1px solid #2e2e35;border-radius:14px;padding:16px;text-align:center}
 .summary.show{display:block}
 .summary .grid{font-size:28px;letter-spacing:4px;margin:6px 0}
 .summary .tot{font-size:22px;font-weight:700;color:var(--glow)}
@@ -140,7 +142,7 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
   <div class="hint">The clock starts when the song comes in. Hit “Name it” (or space) the moment you know it.<br>
   Points halve every 2.5s you listen (2,000 at 0s). Then pick within 1.5s for full credit — the bar drains for 4s.<br>
   Wrong or too slow: −500. Correct under 2s with a quick pick = ⚡ Lightning. Clips are Deezer’s 30-second previews.<br>
-  The Radio Game v0.2 · back to the classic look · Nov 26, 2026</div>
+  The Radio Game v0.3 · black dash finish · Nov 26, 2026</div>
 </div>
 
 <script src="year.js"></script>
@@ -605,7 +607,7 @@ function buildScale() {
     const t = document.createElement('div');
     t.className = 'tick'; t.style.left = pos(f) + '%'; t.style.height = (f % 2 ? 14 : 26) + 'px';
     sc.appendChild(t);
-    if (f % 2 === 0) {
+    if (f % 2 === 0 && f < 108) {
       const l = document.createElement('div');
       l.className = 'lbl'; l.style.left = pos(f) + '%'; l.textContent = f;
       sc.appendChild(l);
