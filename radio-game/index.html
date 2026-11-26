@@ -66,6 +66,8 @@ button:disabled{opacity:.4;cursor:default}
 .stations{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .chip{padding:8px 12px;border-radius:20px;background:#1f1f24;font-size:14px}
 .chip.sel{background:var(--brass);color:#03140a}
+.len{padding:8px 14px;border-radius:20px;background:#1f1f24;font-size:14px}
+.len.on{background:var(--brass);color:#03140a}
 .row{display:flex;gap:8px;margin-top:8px}
 input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px solid #2e2e35;background:#141417;color:var(--text);font:inherit}
 .summary{display:none;margin-top:14px;background:#141417;border:1px solid #2e2e35;border-radius:14px;padding:16px;text-align:center}
@@ -125,12 +127,14 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
     </div>
 
     <div class="score">
-      <span>Song <b id="songN">0</b>/<span id="roundLen">10</span></span>
+      <span>Song <b id="songN">0</b>/<span id="roundLen">5</span></span>
       <span>Right: <b id="rightN">0</b></span>
       <span>Score: <b id="pts">0</b></span>
     </div>
   </div>
 
+  <h3>Songs per run</h3>
+  <div class="stations"><button class="len" data-n="5">5 songs</button><button class="len" data-n="10">10 songs</button></div>
   <h3>Station</h3>
   <div class="stations" id="stations"></div>
   <div class="row">
@@ -141,7 +145,7 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
 
   <div class="hint">Tap “Name it” if you know it, then pick fast.<br>
   Faster = more points · a wrong pick costs 500 · under 2s = ⚡<br>
-  v0.9 · Nov 26, 2026</div>
+  v1.0 · runs of 5 or 10 · Nov 26, 2026</div>
 </div>
 
 <script src="year.js"></script>
@@ -149,7 +153,9 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-const ROUND_LEN = 10;      // songs per round
+// Songs per run: 5 by default, or 10. Remembered on this device.
+let ROUND_LEN = 5, nextLen = 5;
+try { const saved = +localStorage.getItem('radioGameRunLength'); if (saved === 5 || saved === 10) ROUND_LEN = nextLen = saved; } catch (e) {}
 const MAX_LISTEN = 15;     // seconds before the clock runs out
 const STATIC_SEC = 1.4;    // static before each song
 const CHOICES = 5;
@@ -506,6 +512,7 @@ async function startRound() {
     await loadStation(...stationQ);
     if (!tracks.length) return;
   }
+  ROUND_LEN = nextLen; $('roundLen').textContent = ROUND_LEN;
   resetRound();
   $('dial').classList.add('on');
   nextSong();
@@ -644,6 +651,15 @@ document.addEventListener('keydown', e => {
 });
 $('roundLen').textContent = ROUND_LEN;
 
+function setRunLength(n) {
+  nextLen = n;
+  try { localStorage.setItem('radioGameRunLength', n); } catch (e) {}
+  document.querySelectorAll('.len').forEach(b => b.classList.toggle('on', +b.dataset.n === n));
+  if (state === 'idle' || state === 'done') { ROUND_LEN = n; $('roundLen').textContent = n; }
+  else setMsg('Next run will be ' + n + ' songs.'); // don't change a run that's under way
+}
+document.querySelectorAll('.len').forEach(b => b.onclick = () => setRunLength(+b.dataset.n));
+setRunLength(nextLen);
 buildScale();
 buildStations();
 setState('idle');
