@@ -119,6 +119,7 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
         <div class="a" id="rArtist"></div>
         <div class="y" id="rYear"></div>
         <div class="m" id="rMeta"></div>
+        <div class="m" id="rLag" style="font-size:12px;opacity:.7"></div>
         <div class="row"><button id="replay">↻ Hear more of it</button></div>
       </div>
     </div>
@@ -153,7 +154,7 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
 
   <div class="hint">Tap “Name it” if you know it, then pick fast.<br>
   Faster = more points · a wrong pick costs 500 · under 2s = ⚡<br>
-  v1.4 · scrolls to the answer card · Nov 26, 2026</div>
+  v1.5 · clock starts with real sound · Nov 26, 2026</div>
 </div>
 
 <script src="year.js"></script>
@@ -374,12 +375,36 @@ async function nextSong(tries = 0) {
   noiseTo(0.02, canFade ? 0.25 : 0.05);
   if (canFade) fadeVol(a, 1, 250);
 
-  // The clock starts the moment the song is audible.
+  // The clock starts now, then gets corrected once the clip is *actually* playing.
+  // Phones can take a beat between "play" and sound coming out; that gap isn't yours.
   setState('listening');
   t0 = performance.now();
   tick();
   limitTimer = setTimeout(() => stopClock(true), MAX_LISTEN * 1000);
+  measureStartLag(a, prep, t0);
 }
+// Watch the clip's playhead. The first moment it moves forward is when sound really
+// started; work back from how far it has moved to find that instant, and slide the
+// clock's start to it. The difference is recorded as prep.lag (shown, never scored).
+function measureStartLag(a, prep, cue) {
+  const pos0 = a.currentTime;
+  const check = () => {
+    if (current !== prep || state !== 'listening') return;          // already stopped: keep what we had
+    const moved = a.currentTime - pos0;
+    if (moved > 0.02) {
+      const realStart = performance.now() - moved * 1000;
+      const lag = Math.max(0, realStart - cue);
+      prep.lag = lag / 1000;
+      t0 = Math.max(t0, realStart);                                   // clock now counts from real sound
+      clearTimeout(limitTimer);
+      limitTimer = setTimeout(() => stopClock(true), Math.max(0, MAX_LISTEN * 1000 - (performance.now() - t0)));
+      return;
+    }
+    if (performance.now() - cue < 1500) requestAnimationFrame(check);
+  };
+  requestAnimationFrame(check);
+}
+
 function giveUp() {
   loadedAt = 0; // force a fresh song list next time
   setMsg('Having trouble pulling in songs — tap Power on to re-tune, or pick another station.');
@@ -466,7 +491,7 @@ function answer(pick, btn) {
   const pts = ok ? Math.round((timeUp ? MIN_PTS : speedPoints(elapsed)) * mult) : WRONG;
   const lightning = ok && !timeUp && elapsed < LIGHTNING && pickTime <= PICK_FULL;
   total += pts; if (ok) rightN++;
-  results.push({ ok, elapsed, timeUp, pts, pickTime, lightning, track: right });
+  results.push({ ok, elapsed, timeUp, pts, pickTime, lightning, lag: current.lag, track: right });
   updScore();
 
   document.querySelectorAll('.choice').forEach(b => {
@@ -491,6 +516,7 @@ function answer(pick, btn) {
   const prep = current, row = results[results.length - 1];
   showYear(right, () => current === prep, r => { row.year = r.year; row.yearSure = r.sure; });
   // Flash green/red on the choices for a moment, then fold them away and show the answer card.
+  $('rLag').textContent = current.lag != null ? 'Clip took ' + current.lag.toFixed(2) + 's to start — not counted' : '';
   const shownFor = current;
   setTimeout(() => {
     if (current !== shownFor || (state !== 'revealed' && state !== 'lastReveal')) return;
@@ -547,6 +573,10 @@ function showSummary() {
   const fastest = results.filter(r => r.ok && !r.timeUp).reduce((m, r) => Math.min(m, r.elapsed), Infinity);
   $('sTotal').textContent = total.toLocaleString() + ' pts · ' + rightN + '/' + ROUND_LEN +
     (bolts ? ' · ⚡×' + bolts : '') + (isFinite(fastest) ? ' · fastest ' + fastest.toFixed(1) + 's' : '');
+  const lags = results.map(r => r.lag).filter(x => x != null);
+  if (lags.length) $('sTotal').insertAdjacentHTML('beforeend',
+    '<div style="font-size:12px;font-weight:400;color:var(--dim);margin-top:4px">Clips took ' +
+    (lags.reduce((a, b) => a + b, 0) / lags.length).toFixed(2) + 's on average to start (not counted)</div>');
   const list = $('sList'); list.innerHTML = '';
   results.forEach(r => {
     const d = document.createElement('div');
