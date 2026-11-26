@@ -114,7 +114,7 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
   <h3>Slipped by</h3>
   <div class="log" id="log"></div>
 
-  <div class="hint">Hit “Got it” (or space) the moment someone names the song. Clips are Deezer’s 30-second previews.<br>Playing alone? Try <a href="solo.html" style="color:var(--brass)">Radio Dial Solo</a>.<br>v2 · phone-ready · Nov 23, 2026</div>
+  <div class="hint">Hit “Got it” (or space) the moment someone names the song. Clips are Deezer’s 30-second previews.<br>Playing alone? Try <a href="solo.html" style="color:var(--brass)">Radio Dial Solo</a>.<br>v2.1 · refreshes stale song links · Nov 26, 2026</div>
 </div>
 
 <script src="year.js"></script>
@@ -131,6 +131,14 @@ const STATIONS = [
 ];
 
 let tracks = [], idx = 0, running = false, sweepId = 0;
+// Deezer's preview links expire after a while. If the page has sat open (say, as a
+// home-screen app resumed days later), the song list is full of dead links, so we
+// quietly re-fetch the station before playing.
+const STALE_MS = 20 * 60 * 1000;
+let stationQ = null, loadedAt = 0;
+const isStale = () => stationQ && Date.now() - loadedAt > STALE_MS;
+let failsInRow = 0;
+
 let current = null, nextPrep = null, replayTimer = null;
 let points = 0, heard = 0, missed = 0;
 
@@ -209,6 +217,7 @@ async function loadStation(label, q) {
     const fresh = shuffle((list || []).filter(t => t.preview && t.readable !== false));
     if (fresh.length < 5) throw new Error('not enough playable songs — try another station');
     tracks = fresh; idx = 0;
+    stationQ = [label, q]; loadedAt = Date.now(); failsInRow = 0;
     pauseAll(); nextPrep = null; current = null;
     status(label + ' · ' + tracks.length + ' songs');
     document.querySelectorAll('.chip').forEach(c => c.classList.toggle('sel', c.dataset.label === label));
@@ -309,13 +318,13 @@ async function sweep() {
     const [prep] = await Promise.all([nextPrep, sleep(statSec() * 1000)]);
     if (!alive()) return;
     nextPrep = prepare(nextTrack());
-    if (!prep.ok) continue;
+    if (!prep.ok) { if (++failsInRow >= 4) return deadAir(); continue; }
 
     // A station comes in
     const a = prep.audio;
     if (a._tok !== prep.tok) continue; // that player has since been given another song
     a.muted = true; a.volume = canFade ? 0 : 1;
-    try { await a.play(); } catch (e) { continue; }
+    try { await a.play(); failsInRow = 0; } catch (e) { if (++failsInRow >= 4) return deadAir(); continue; }
     if (prep.start == null) { // couldn't preload: jump to a random spot now, still muted
       if (a.readyState < 1) await once(a, 'loadedmetadata', 3000);
       prep.start = randomStart(a);
@@ -458,7 +467,20 @@ function buildStations() {
   });
 }
 
-$('power').onclick = () => (running || $('dial').classList.contains('on')) ? powerOff() : powerOn();
+$('power').onclick = async () => {
+  if (running || $('dial').classList.contains('on')) { powerOff(); return; }
+  if (isStale()) {
+    unlockPlayers(); initAudio(); // still inside the tap (iPhone)
+    await loadStation(...stationQ);
+  }
+  powerOn();
+};
+// Several songs in a row wouldn't load: stop instead of hissing forever.
+function deadAir() {
+  failsInRow = 0; loadedAt = 0;
+  powerOff();
+  setMsg('Lost the signal — tap Power on to re-tune, or pick another station.');
+}
 $('gotit').onclick = gotIt;
 $('replay').onclick = replay;
 $('right').onclick = () => score(true);

@@ -140,7 +140,7 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
   <div class="hint">The clock starts when the song comes in. Hit “Name it” (or space) the moment you know it.<br>
   Points halve every 2.5s you listen (2,000 at 0s). Then pick within 1.5s for full credit — the bar drains for 4s.<br>
   Wrong or too slow: −500. Correct under 2s with a quick pick = ⚡ Lightning. Clips are Deezer’s 30-second previews.<br>
-  solo v3 · original release years · Nov 23, 2026</div>
+  solo v3.1 · refreshes stale song links · Nov 26, 2026</div>
 </div>
 
 <script src="year.js"></script>
@@ -169,6 +169,13 @@ const STATIONS = [
 ];
 
 let tracks = [], idx = 0, stationName = '';
+// Deezer's preview links expire after a while. If the page has sat open (say, as a
+// home-screen app resumed days later), the song list is full of dead links, so we
+// quietly re-fetch the station before playing.
+const STALE_MS = 20 * 60 * 1000;
+let stationQ = null, loadedAt = 0;
+const isStale = () => stationQ && Date.now() - loadedAt > STALE_MS;
+
 let state = 'idle'; // idle → scanning → listening → answering → revealed → … → done
 let sweepId = 0, current = null, nextPrep = null;
 let t0 = 0, elapsed = 0, tickRaf = 0, limitTimer = 0, replayTimer = 0;
@@ -210,6 +217,7 @@ async function loadStation(label, q) {
     const fresh = shuffle((list || []).filter(t => t.preview && t.readable !== false));
     if (fresh.length < ROUND_LEN + CHOICES) throw new Error('not enough playable songs — try another station');
     tracks = fresh; idx = 0; stationName = label;
+    stationQ = [label, q]; loadedAt = Date.now();
     pauseAll(); nextPrep = null; current = null;
     status(label + ' · ' + tracks.length + ' songs');
     document.querySelectorAll('.chip').forEach(c => c.classList.toggle('sel', c.dataset.label === label));
@@ -357,7 +365,11 @@ async function nextSong(tries = 0) {
   tick();
   limitTimer = setTimeout(() => stopClock(true), MAX_LISTEN * 1000);
 }
-function giveUp() { setMsg('Having trouble pulling in songs — try another station.'); setState('idle'); }
+function giveUp() {
+  loadedAt = 0; // force a fresh song list next time
+  setMsg('Having trouble pulling in songs — tap Power on to re-tune, or pick another station.');
+  setState('idle');
+}
 
 function tick() {
   elapsed = (performance.now() - t0) / 1000;
@@ -485,10 +497,14 @@ function resetRound() {
   updScore(); hide('choices'); hide('reveal'); hide('summary');
   setClock(0, true); setLive(false);
 }
-function startRound() {
+async function startRound() {
   if (!tracks.length) return;
   unlockPlayers(); // must happen inside the tap (iPhone)
   initAudio();
+  if (isStale()) {
+    await loadStation(...stationQ);
+    if (!tracks.length) return;
+  }
   resetRound();
   $('dial').classList.add('on');
   nextSong();
