@@ -153,7 +153,7 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
 
   <div class="hint">Tap “Name it” if you know it, then pick fast.<br>
   Faster = more points · a wrong pick costs 500 · under 2s = ⚡<br>
-  v1.3 · answer card fits on screen · Nov 26, 2026</div>
+  v1.4 · scrolls to the answer card · Nov 26, 2026</div>
 </div>
 
 <script src="year.js"></script>
@@ -495,7 +495,7 @@ function answer(pick, btn) {
   setTimeout(() => {
     if (current !== shownFor || (state !== 'revealed' && state !== 'lastReveal')) return;
     hide('choices'); show('reveal');
-    $('reveal').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    $('reveal').scrollIntoView({ block: 'center', behavior: 'smooth' }); // always bring the answer card to the middle of the screen
   }, 700);
 
   setState(songN >= ROUND_LEN ? 'lastReveal' : 'revealed');
