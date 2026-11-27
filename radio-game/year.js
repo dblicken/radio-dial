@@ -8,7 +8,7 @@
 // Also exports cleanTitle(), which strips "(2018 Remaster)", "- Single Version",
 // "(From 'Dirty Dancing' Soundtrack)" and similar noise from titles.
 (function () {
-  const WORDS = 'remaster(?:ed)?|remix|version|edit|mono|stereo|live|from|soundtrack|feat\\.?|ft\\.?|deluxe|anniversary|single|radio|bonus|demo|re-?recorded|mix';
+  const WORDS = 'remaster(?:ed)?|master(?:ed)?|digital|remix|version|edit|mono|stereo|live|from|soundtrack|feat\\.?|ft\\.?|deluxe|anniversary|single|radio|bonus|demo|re-?recorded|mix';
   const BRACKETS = new RegExp('\\s*[\\(\\[][^\\)\\]]*\\b(?:' + WORDS + ')\\b[^\\)\\]]*[\\)\\]]', 'gi');
   const DASH = new RegExp('\\s+-\\s+[^-]*\\b(?:' + WORDS + ')\\b.*$', 'i');
 
@@ -26,10 +26,18 @@
     const run = chain.then(async () => {
       const wait = last + 1100 - Date.now();
       if (wait > 0) await new Promise(r => setTimeout(r, wait));
-      last = Date.now();
-      const r = await fetch(url);
-      if (!r.ok) throw new Error('MusicBrainz ' + r.status);
-      return r.json();
+      // If MusicBrainz is busy (it says "503, slow down") or the request fails,
+      // wait a couple of seconds and try once more before giving up.
+      for (let attempt = 0; attempt < 2; attempt++) {
+        if (attempt) await new Promise(r => setTimeout(r, 2000));
+        last = Date.now();
+        try {
+          const r = await fetch(url);
+          if (r.ok) return r.json();
+          if (r.status !== 503 && r.status !== 429) throw new Error('MusicBrainz ' + r.status);
+        } catch (e) { if (attempt) throw e; }
+      }
+      throw new Error('MusicBrainz busy');
     });
     chain = run.catch(() => {});
     return run;
