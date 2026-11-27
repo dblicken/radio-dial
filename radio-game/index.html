@@ -49,9 +49,10 @@ button:disabled{opacity:.4;cursor:default}
 .choices{display:none;flex-direction:column;gap:8px;margin-top:14px}
 .choices.show{display:flex}
 .choices .q{color:var(--dim);font-size:14px}
-.choice{text-align:left;padding:10px 14px;background:#1f1f24;border:1px solid #2e2e35;font-size:16px;line-height:1.25}
+.choice{text-align:left;padding:10px 14px;background:#1f1f24;border:1px solid #2e2e35;font-size:17px;line-height:1.25}
+.choice span{font-weight:700;color:#fff}
 .choice span,.choice small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.choice small{color:var(--dim);font-size:13px}
+.choice small{color:#c9c4bd;font-size:14px}
 /* While picking: hide the dial and the button so all five choices sit right
    under the clock, where your thumb already is — no scrolling against the clock. */
 body.compact .dial, body.picking .controls, body.picking .choices .q{display:none}
@@ -155,7 +156,7 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
 
   <div class="hint">Tap “Name it” if you know it, then pick fast.<br>
   Faster = more points · a wrong pick costs 500 · under 2s = ⚡<br>
-  v1.6 · change station between runs · Nov 27, 2026</div>
+  v1.7 · A–Z choices, bolder · Nov 27, 2026</div>
 </div>
 
 <script src="year.js"></script>
@@ -442,7 +443,11 @@ function showChoices(timeUp) {
     if (wrong.length === CHOICES - 1) break;
   }
   for (const t of pool) { if (wrong.length >= CHOICES - 1) break; if (!wrong.includes(t)) wrong.push(t); }
-  const options = shuffle([right, ...wrong]);
+  // Alphabetical by title, so once you know it's "Heart Of Glass" your eye goes straight
+  // to the H's. Ignores a leading "The"/"A" and brackets like "(I've Had)".
+  const sortKey = t => RadioYear.cleanTitle(t.title).toLowerCase()
+    .replace(/^\([^)]*\)\s*/, '').replace(/^(the|a|an)\s+/, '').replace(/[^a-z0-9 ]/g, '');
+  const options = [right, ...wrong].sort((x, y) => sortKey(x).localeCompare(sortKey(y)));
 
   const box = $('choices'); box.innerHTML = '';
   const q = document.createElement('div'); q.className = 'q';
