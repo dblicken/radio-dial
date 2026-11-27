@@ -86,3 +86,12 @@ Indie rock is a weighted blend of eleven hand-picked Deezer playlists covering 1
 - **Cut:** Best Indie Hits, for its German-language and pop drift.
 
 Duplicates are merged, and no artist gets more than 3 songs. Playlist IDs and weights are in `INDIE_BLEND` in `radio-game/index.html`.
+
+### The Indie rock (Apple) station
+
+The songs come from **Apple Music's editorial playlists**, and the previews from Apple's free iTunes Search API, so no Apple developer account is needed.
+
+- `radio-game/apple-indie.js` holds a snapshot (Nov 27, 2026) of eight Apple playlists: Indie Rock Essentials, ’80s Indie Essentials, ’90s Indie Rock Essentials, 2000s Indie Essentials, 2010s Indie Essentials (40 songs each per load), College Rock Essentials (25), Post-Punk Essentials (20) and Today’s Indie Rock (15). That's 774 unique songs.
+- The snapshot stores only Apple's track IDs, in base 36 to keep the file small. Each load samples about 250 of them, then looks them all up in two requests to `itunes.apple.com/lookup`, which returns title, artist, artwork, a 30-second preview and the release date.
+- Apple keeps each song's *original* release date even on remasters and deluxe editions, so this station shows Apple's year directly and skips the MusicBrainz lookup.
+- The playlists were read from music.apple.com in a real browser, because the track lists load after the page does. Apple updates its playlists over time, so re-read them every few months.
