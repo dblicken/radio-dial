@@ -155,8 +155,8 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
   <div class="msg" id="msg"></div>
 
   <div class="hint">Tap “Name it” if you know it, then pick fast.<br>
-  Faster = more points · a wrong pick costs 500 · under 2s = ⚡<br>
-  v2.8 · a little new indie back in · Nov 27, 2026</div>
+  Faster = more points · wrong loses what right would win · not sure? let it ride<br>
+  v2.9 · wrong costs what right would win · Nov 27, 2026</div>
 </div>
 
 <script src="year.js"></script>
@@ -177,7 +177,8 @@ const HALF_LIFE = 2.5;     // every 2.5s of listening halves the points
 const MIN_PTS = 25;        // floor for a correct answer
 const PICK_FULL = 1.5;     // pick within 1.5s of stopping = full points ("verified")
 const PICK_LIMIT = 4;      // after 4s of picking, it counts as a miss
-const WRONG = -500;        // wrong pick or too slow to pick
+// Wrong pick (or too slow to pick): you lose what a right pick would have earned at that
+// moment. Bluffing early is a bad bet; a song you don't know is cheap if you let it ride.
 const LIGHTNING = 2;       // verified correct under 2s = ⚡
 
 const STATIONS = [
@@ -548,7 +549,8 @@ function answer(pick, btn) {
   const pickTime = Math.min(PICK_LIMIT, (performance.now() - pickT0) / 1000);
   const right = current.track, ok = !!pick && pick.id === right.id;
   const mult = pickMult(pickTime);
-  const pts = ok ? Math.round((timeUp ? MIN_PTS : speedPoints(elapsed)) * mult) : WRONG;
+  const stake = timeUp ? MIN_PTS : speedPoints(elapsed);   // what this moment was worth
+  const pts = ok ? Math.round(stake * mult) : -stake;
   const lightning = ok && !timeUp && elapsed < LIGHTNING && pickTime <= PICK_FULL;
   total += pts; if (ok) rightN++;
   results.push({ ok, elapsed, timeUp, pts, pickTime, lightning, lag: current.lag, track: right });
@@ -565,8 +567,8 @@ function answer(pick, btn) {
     lightning ? '⚡ LIGHTNING · ' + elapsed.toFixed(1) + 's · +' + pts.toLocaleString()
     : ok && timeUp ? '✓ After the buzzer · +' + pts + slow
     : ok ? '✓ ' + elapsed.toFixed(1) + 's · +' + pts.toLocaleString() + slow
-    : !pick ? '⏱ Too slow to pick · ' + WRONG
-    : '✗ You picked “' + RadioYear.cleanTitle(pick.title) + '” · ' + WRONG;
+    : !pick ? '⏱ Too slow to pick · ' + pts.toLocaleString()
+    : '✗ You picked “' + RadioYear.cleanTitle(pick.title) + '” · ' + pts.toLocaleString();
   $('rVerdict').style.color = lightning ? 'var(--glow)' : ok ? '#7fe08f' : '#ff8a7a';
   if (lightning) { $('clock').classList.remove('flash'); void $('clock').offsetWidth; $('clock').classList.add('flash'); }
   $('rTitle').textContent = RadioYear.cleanTitle(right.title);

@@ -13,7 +13,7 @@ A name-that-tune game in a single web page. A radio dial sweeps through static a
 
 - **Listening time sets the points:** 2000 × ½^(seconds ÷ 2.5). That works out to 1,741 at 0.5s, 1,434 at 1.2s, 1,149 at 2s, 500 at 5s and 125 at 10s. Because the points halve every 2.5 seconds, the first seconds are worth far more than the later ones.
 - **Picking time verifies it:** after you stop, a red bar drains for 4 seconds. Pick within 1.5s for full points. After that the points slide down to ×0.5, and if the bar runs out it counts as a miss. Stopping early and then reading the choices at leisure no longer pays.
-- **Wrong or too slow costs −500.** Stopping at once and guessing at random now loses points on average: 20% × ~1,850 − 80% × 500 ≈ −30.
+- **Wrong or too slow** costs −500 in Solo. In The Radio Game, a wrong pick costs what a right pick would have earned at that moment (−1,149 at 2s, −125 at 10s, −25 after the buzzer). Bluffing early is a losing bet at any moment, and a song you don't know is cheap if you let it ride.
 - **⚡ Lightning:** correct in under 2s with a pick under 1.5s.
 
 The wrong answers come from the same station, so they're from the same era and genre. Where possible they're also by different artists, so you can't just spot the one artist that doesn't fit.
