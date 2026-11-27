@@ -72,8 +72,13 @@
         else if (rg['primary-type'] === 'Single') single = keep(single, y, from);
       }
     }
-    if (album) return { ...album, kind: 'album' };
-    if (single) return { ...single, kind: 'single' };
+    // Sanity check: if the "first album" is years after the song first came out at all,
+    // that album is a reissue (remasters are often filed as separate recordings, and their
+    // only albums are deluxe editions). Then trust the earliest release instead.
+    // A gap of a few years is normal (demos and EPs before the album), so allow up to 3.
+    const reissue = r => r && any && r.year - any.year > 3;
+    if (album && !reissue(album)) return { ...album, kind: 'album' };
+    if (single && !reissue(single)) return { ...single, kind: 'single' };
     if (any) return { ...any, kind: 'first release' };
     return null;
   }
