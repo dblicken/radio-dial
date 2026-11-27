@@ -156,7 +156,7 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
 
   <div class="hint">Tap “Name it” if you know it, then pick fast.<br>
   Faster = more points · a wrong pick costs 500 · under 2s = ⚡<br>
-  v2.0 · album years · Nov 27, 2026</div>
+  v2.1 · “from” the album · Nov 27, 2026</div>
 </div>
 
 <script src="year.js"></script>
@@ -645,6 +645,9 @@ function showYear(track, stillCurrent, onYear) {
     el.className = r.sure ? 'y' : 'y unsure';
     const note = !r.sure ? 'may be a reissue date' : r.kind === 'single' ? 'single' : r.kind === 'first release' ? 'earliest release' : '';
     el.innerHTML = r.year + (note ? ' <small>(' + note + ')</small>' : '');
+    // Name the album (or single) the year comes from, in place of Deezer's
+    // album name, which is often a reissue ("Thriller 25 Super Deluxe Edition").
+    if (r.from) $('rMeta').textContent = 'from ' + r.from;
     if (onYear) onYear(r);
   });
 }

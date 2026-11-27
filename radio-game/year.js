@@ -45,27 +45,28 @@
   const NOT_THE_ALBUM = ['compilation', 'live', 'remix', 'dj-mix', 'mixtape/street', 'demo', 'interview', 'audiobook', 'spokenword'];
   function earliestYear(recordings, title, artist) {
     const nt = norm(cleanTitle(title)), na = norm(artist);
-    let album = null, single = null, any = null;
-    const keep = (cur, y) => (y > 1900 && (!cur || y < cur)) ? y : cur;
+    let album = null, single = null, any = null;   // each: { year, from }
+    const keep = (cur, y, from) => (y > 1900 && (!cur || y < cur.year)) ? { year: y, from } : cur;
     for (const r of recordings || []) {
       if ((r.score || 0) < 70) continue;
       if (norm(cleanTitle(r.title)) !== nt) continue;
       const credit = norm((r['artist-credit'] || []).map(c => c.name + (c.joinphrase || '')).join(''));
       if (!credit || !(credit.includes(na) || na.includes(credit))) continue;
-      any = keep(any, parseInt((r['first-release-date'] || '').slice(0, 4), 10));
+      any = keep(any, parseInt((r['first-release-date'] || '').slice(0, 4), 10), null);
       for (const rel of r.releases || []) {
         if (rel.status && rel.status !== 'Official') continue;
         const rg = rel['release-group'] || {};
         const y = parseInt((rel.date || '').slice(0, 4), 10);
         const extra = (rg['secondary-types'] || []).map(t => t.toLowerCase());
         if (extra.some(t => NOT_THE_ALBUM.includes(t))) continue;
-        if (rg['primary-type'] === 'Album') album = keep(album, y);
-        else if (rg['primary-type'] === 'Single') single = keep(single, y);
+        const from = rg.title || rel.title || null;   // e.g. "Parallel Lines"
+        if (rg['primary-type'] === 'Album') album = keep(album, y, from);
+        else if (rg['primary-type'] === 'Single') single = keep(single, y, from);
       }
     }
-    if (album) return { year: album, kind: 'album' };
-    if (single) return { year: single, kind: 'single' };
-    if (any) return { year: any, kind: 'first release' };
+    if (album) return { ...album, kind: 'album' };
+    if (single) return { ...single, kind: 'single' };
+    if (any) return { ...any, kind: 'first release' };
     return null;
   }
 
@@ -101,7 +102,7 @@
         const [mb, dzY] = await Promise.all([musicbrainzYear(track).catch(() => null), deezerYear(track.id)]);
         // An album or single year from MusicBrainz is trusted as is (Deezer's date is
         // usually a reissue). Only the any-release fallback is checked against Deezer.
-        if (mb && mb.kind !== 'first release') return { year: mb.year, sure: true, kind: mb.kind };
+        if (mb && mb.kind !== 'first release') return { year: mb.year, from: mb.from, sure: true, kind: mb.kind };
         if (mb) return { year: dzY ? Math.min(mb.year, dzY) : mb.year, sure: true, kind: mb.kind };
         return dzY ? { year: dzY, sure: false } : null;
       })());
