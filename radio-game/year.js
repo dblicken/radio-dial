@@ -37,18 +37,36 @@
 
   // Given MusicBrainz search results, find the earliest year among recordings that
   // really are this song by this artist (not covers, not similarly named songs).
+  // Which year to show, in order of preference:
+  //   1. the first official studio album (or soundtrack) the song appeared on
+  //   2. otherwise, its first official single
+  //   3. otherwise, its earliest release of any kind (demos, EPs, bootlegs…)
+  // Compilations, live albums, remixes and demos never count as "the album".
+  const NOT_THE_ALBUM = ['compilation', 'live', 'remix', 'dj-mix', 'mixtape/street', 'demo', 'interview', 'audiobook', 'spokenword'];
   function earliestYear(recordings, title, artist) {
     const nt = norm(cleanTitle(title)), na = norm(artist);
-    let best = null;
+    let album = null, single = null, any = null;
+    const keep = (cur, y) => (y > 1900 && (!cur || y < cur)) ? y : cur;
     for (const r of recordings || []) {
       if ((r.score || 0) < 70) continue;
       if (norm(cleanTitle(r.title)) !== nt) continue;
       const credit = norm((r['artist-credit'] || []).map(c => c.name + (c.joinphrase || '')).join(''));
       if (!credit || !(credit.includes(na) || na.includes(credit))) continue;
-      const y = parseInt((r['first-release-date'] || '').slice(0, 4), 10);
-      if (y > 1900 && (!best || y < best)) best = y;
+      any = keep(any, parseInt((r['first-release-date'] || '').slice(0, 4), 10));
+      for (const rel of r.releases || []) {
+        if (rel.status && rel.status !== 'Official') continue;
+        const rg = rel['release-group'] || {};
+        const y = parseInt((rel.date || '').slice(0, 4), 10);
+        const extra = (rg['secondary-types'] || []).map(t => t.toLowerCase());
+        if (extra.some(t => NOT_THE_ALBUM.includes(t))) continue;
+        if (rg['primary-type'] === 'Album') album = keep(album, y);
+        else if (rg['primary-type'] === 'Single') single = keep(single, y);
+      }
     }
-    return best;
+    if (album) return { year: album, kind: 'album' };
+    if (single) return { year: single, kind: 'single' };
+    if (any) return { year: any, kind: 'first release' };
+    return null;
   }
 
   async function musicbrainzYear(track) {
@@ -80,8 +98,11 @@
   function originalYear(track) {
     if (!cache.has(track.id)) {
       cache.set(track.id, (async () => {
-        const [mbY, dzY] = await Promise.all([musicbrainzYear(track).catch(() => null), deezerYear(track.id)]);
-        if (mbY) return { year: dzY ? Math.min(mbY, dzY) : mbY, sure: true };
+        const [mb, dzY] = await Promise.all([musicbrainzYear(track).catch(() => null), deezerYear(track.id)]);
+        // An album or single year from MusicBrainz is trusted as is (Deezer's date is
+        // usually a reissue). Only the any-release fallback is checked against Deezer.
+        if (mb && mb.kind !== 'first release') return { year: mb.year, sure: true, kind: mb.kind };
+        if (mb) return { year: dzY ? Math.min(mb.year, dzY) : mb.year, sure: true, kind: mb.kind };
         return dzY ? { year: dzY, sure: false } : null;
       })());
     }

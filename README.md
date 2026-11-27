@@ -71,3 +71,7 @@ Repo **Settings → Pages → Build and deployment → Source: Deploy from a bra
 A fork of Radio Dial Solo v3.1 (Nov 26, 2026), played at https://dblicken.github.io/radio-dial/radio-game/, where new enhancements get tried. It has its own copy of `year.js`, so experiments here can't change the original. (A car-dashboard look was tried and dropped; it's in the git history, commit ac229e7.)
 
 **The original is frozen** on the branch `radio-dial-v1-frozen`, an exact snapshot from Nov 26, 2026. The files at the top of `main` (`index.html`, `solo.html`, `year.js`) are also left as they were.
+
+### Years in The Radio Game
+
+The Radio Game's copy of `year.js` prefers the year of the **first official studio album** the song appeared on (soundtracks count; compilations, live albums, remixes and demos don't). Failing that it uses the first official single, and only then the earliest release of any kind. So Arctic Monkeys' "Fake Tales of San Francisco" shows 2006, the year of the album, not 2004, the year of the demos. A small note appears beside the year when it comes from a single or another fallback.
