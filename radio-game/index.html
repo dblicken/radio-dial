@@ -156,7 +156,7 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
 
   <div class="hint">Tap “Name it” if you know it, then pick fast.<br>
   Faster = more points · a wrong pick costs 500 · under 2s = ⚡<br>
-  v2.1 · “from” the album · Nov 27, 2026</div>
+  v2.2 · varied stations, “Next song” · Nov 27, 2026</div>
 </div>
 
 <script src="year.js"></script>
@@ -218,6 +218,12 @@ function shuffle(a) {
   return a;
 }
 
+const MIN_ARTISTS = 20;
+const artistCount = list => new Set((list || []).map(t => t.artist && t.artist.name)).size;
+function capPerArtist(list, max) {
+  const n = {};
+  return list.filter(t => { const a = t.artist ? t.artist.name : ''; n[a] = (n[a] || 0) + 1; return n[a] <= max; });
+}
 async function loadStation(label, q) {
   resetRound(); setState('idle');
   setMsg(''); status('Tuning to ' + label + '…');
@@ -227,12 +233,24 @@ async function loadStation(label, q) {
     if (q === '__chart') {
       list = (await jsonp('https://api.deezer.com/chart/0/tracks?limit=100')).data;
     } else {
-      const p = await jsonp('https://api.deezer.com/search/playlist?q=' + encodeURIComponent(q));
+      const p = await jsonp('https://api.deezer.com/search/playlist?q=' + encodeURIComponent(q) + '&limit=25');
       if (!p.data || !p.data.length) throw new Error('no playlists found for “' + q + '”');
-      const pick = p.data[Math.floor(Math.random() * Math.min(3, p.data.length))];
-      list = (await jsonp('https://api.deezer.com/playlist/' + pick.id + '/tracks?limit=200')).data;
+      // Some search hits are really one band's playlist ("indie rock" → all Arctic Monkeys).
+      // Try the top results (in shuffled order, so runs vary) and take the first one with
+      // real variety: at least MIN_ARTISTS different artists. Otherwise keep the most varied.
+      const big = p.data.filter(pl => (pl.nb_tracks || 0) >= 30);
+      const pool = big.length ? big : p.data;
+      const order = shuffle(pool.slice(0, 5)).concat(pool.slice(5, 8));
+      let best = null;
+      for (const pl of order) {
+        const d = (await jsonp('https://api.deezer.com/playlist/' + pl.id + '/tracks?limit=200')).data || [];
+        if (!best || artistCount(d) > artistCount(best)) best = d;
+        if (artistCount(d) >= MIN_ARTISTS) break;
+      }
+      list = best;
     }
-    const fresh = shuffle((list || []).filter(t => t.preview && t.readable !== false));
+    // At most 3 songs per artist, so even a lopsided playlist can't fill a run with one band.
+    const fresh = capPerArtist(shuffle((list || []).filter(t => t.preview && t.readable !== false)), 3);
     if (fresh.length < ROUND_LEN + CHOICES) throw new Error('not enough playable songs — try another station');
     tracks = fresh; idx = 0; stationName = label;
     stationQ = [label, q]; loadedAt = Date.now();
@@ -615,7 +633,7 @@ function setState(s) {
     scanning: ['… tuning', true, 'stop'],
     listening: ['Name it!', false, 'stop'],
     answering: ['Pick fast ↓', true, ''],
-    revealed: ['Next station ▶', false, ''],
+    revealed: ['Next song ▶', false, ''],
     lastReveal: ['See results ▶', false, ''],
     done: ['▶ Same station again', false, '']
   };
