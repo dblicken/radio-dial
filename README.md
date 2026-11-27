@@ -78,4 +78,10 @@ The Radio Game's copy of `year.js` prefers the year of the **first official stud
 
 ### The Indie rock station
 
-Indie rock is a blend of ten hand-picked Deezer playlists covering 1978 to today, mostly from Deezer's own alternative editor: Post-Punk Essentials, 80s Alternative, 90s Indie, 90s Alternative, 00s Indie Rock, Indie classics (00s), 10s Alternative, Indie Rock Essentials, Indie Rock Now, and Best Indie Hits (00s–today). Each contributes up to 40 random songs per load. Duplicates are merged, and no artist gets more than 3 songs.
+Indie rock is a weighted blend of ten hand-picked Deezer playlists covering 1978 to today. They were audited and re-tuned on Nov 27, 2026.
+
+- **Core (up to 40 songs each per load):** Indie Rock Essentials, 00s Indie Rock, Indie classics (Digster), 90s Indie (Filtr UK), College Rock Essentials.
+- **Flavor (up to 20 each):** Post-Punk Essentials, 80s Alternative, 90s Alternative, 10s Alternative, Indie Supreme.
+- **Cut:** Best Indie Hits, for its German-language and pop drift, and Indie Rock Now, which is almost all brand-new, little-known acts.
+
+Duplicates are merged, and no artist gets more than 3 songs. Playlist IDs and weights are in `INDIE_BLEND` in `radio-game/index.html`.

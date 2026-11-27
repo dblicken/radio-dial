@@ -156,7 +156,7 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
 
   <div class="hint">Tap “Name it” if you know it, then pick fast.<br>
   Faster = more points · a wrong pick costs 500 · under 2s = ⚡<br>
-  v2.6 · cleaner titles, steadier years · Nov 27, 2026</div>
+  v2.7 · Indie rock station re-tuned · Nov 27, 2026</div>
 </div>
 
 <script src="year.js"></script>
@@ -218,32 +218,33 @@ function shuffle(a) {
   return a;
 }
 
-// Indie rock, 1978 to today: a blend of hand-picked Deezer playlists, roughly one or two
-// per era, mostly by Deezer's own alternative editor. Each one contributes up to 40
-// random songs, so the 324-song "Best Indie Hits" can't drown out the 50-song decade lists.
+// Indie rock, 1978 to today: a blend of hand-picked Deezer playlists (audited Nov 27, 2026).
+// Each entry: [playlist id, name, how many random songs it contributes per load].
+// Core lists give 40; broader or deeper ones give 20 so they flavor the mix without dominating.
 const INDIE_BLEND = [
-  [8700369282,  'Post-Punk Essentials (late 70s–80s)'],
-  [1276784581,  '80s Alternative'],
-  [1890853682,  '90s Indie (Filtr UK)'],
-  [5337198442,  '90s Alternative'],
-  [8929584182,  '00s Indie Rock'],
-  [12355395263, 'Indie classics, 00s (Digster)'],
-  [6200785264,  '10s Alternative'],
-  [8716319082,  'Indie Rock Essentials (all-time)'],
-  [760160361,   'Indie Rock Now'],
-  [4786756328,  'Best Indie Hits, 00s–today'],
+  [8716319082,  'Indie Rock Essentials (all-time)',      40],
+  [8929584182,  '00s Indie Rock',                        40],
+  [12355395263, 'Indie classics (Digster, 80s–00s)',     40],
+  [1890853682,  '90s Indie (Filtr UK)',                  40],
+  [8062328742,  'College Rock Essentials (80s–90s US)',  40],
+  [8700369282,  'Post-Punk Essentials (late 70s–80s)',   20],
+  [1276784581,  '80s Alternative',                       20],
+  [5337198442,  '90s Alternative',                       20],
+  [6200785264,  '10s Alternative',                       20],
+  [735488796,   'Indie Supreme (today’s bigger names)',  20],
 ];
-const PER_PLAYLIST = 40;
+// Cut in the audit: Best Indie Hits (German-language and pop drift) and
+// Indie Rock Now (almost all brand-new, little-known acts).
 async function loadBlend(ids) {
   const lists = await Promise.all(ids.map(([id]) =>
     jsonp('https://api.deezer.com/playlist/' + id + '/tracks?limit=200').then(d => d.data || []).catch(() => [])));
   const seen = new Set(), out = [];
-  for (const list of lists) {
-    for (const t of shuffle(list.slice()).slice(0, PER_PLAYLIST)) {
+  lists.forEach((list, i) => {
+    for (const t of shuffle(list.slice()).slice(0, ids[i][2])) {
       const key = (t.artist ? t.artist.name : '') + '|' + RadioYear.cleanTitle(t.title).toLowerCase();
       if (!seen.has(key)) { seen.add(key); out.push(t); }   // same song on two playlists counts once
     }
-  }
+  });
   if (!out.length) throw new Error('couldn’t reach the indie playlists');
   return out;
 }
