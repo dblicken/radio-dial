@@ -156,7 +156,7 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
 
   <div class="hint">Tap “Name it” if you know it, then pick fast.<br>
   Faster = more points · a wrong pick costs 500 · under 2s = ⚡<br>
-  v2.7 · Indie rock station re-tuned · Nov 27, 2026</div>
+  v2.8 · a little new indie back in · Nov 27, 2026</div>
 </div>
 
 <script src="year.js"></script>
@@ -232,9 +232,11 @@ const INDIE_BLEND = [
   [5337198442,  '90s Alternative',                       20],
   [6200785264,  '10s Alternative',                       20],
   [735488796,   'Indie Supreme (today’s bigger names)',  20],
+  [760160361,   'Indie Rock Now (brand-new acts, small dose)', 15],
 ];
-// Cut in the audit: Best Indie Hits (German-language and pop drift) and
-// Indie Rock Now (almost all brand-new, little-known acts).
+// Cut in the audit: Best Indie Hits (German-language and pop drift).
+// Indie Rock Now was cut too, then brought back at a small dose: it's where
+// good new bands like This Is Lorelei come from, alongside a lot of filler.
 async function loadBlend(ids) {
   const lists = await Promise.all(ids.map(([id]) =>
     jsonp('https://api.deezer.com/playlist/' + id + '/tracks?limit=200').then(d => d.data || []).catch(() => [])));
