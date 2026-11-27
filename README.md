@@ -75,3 +75,7 @@ A fork of Radio Dial Solo v3.1 (Nov 26, 2026), played at https://dblicken.github
 ### Years in The Radio Game
 
 The Radio Game's copy of `year.js` prefers the year of the **first official studio album** the song appeared on (soundtracks count; compilations, live albums, remixes and demos don't). Failing that it uses the first official single, and only then the earliest release of any kind. So Arctic Monkeys' "Fake Tales of San Francisco" shows 2006, the year of the album, not 2004, the year of the demos. A small note appears beside the year when it comes from a single or another fallback.
+
+### The Indie rock station
+
+Indie rock is a blend of ten hand-picked Deezer playlists covering 1978 to today, mostly from Deezer's own alternative editor: Post-Punk Essentials, 80s Alternative, 90s Indie, 90s Alternative, 00s Indie Rock, Indie classics (00s), 10s Alternative, Indie Rock Essentials, Indie Rock Now, and Best Indie Hits (00s–today). Each contributes up to 40 random songs per load. Duplicates are merged, and no artist gets more than 3 songs.

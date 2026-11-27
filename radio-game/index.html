@@ -156,7 +156,7 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
 
   <div class="hint">Tap “Name it” if you know it, then pick fast.<br>
   Faster = more points · a wrong pick costs 500 · under 2s = ⚡<br>
-  v2.4 · remembers your station · Nov 27, 2026</div>
+  v2.5 · Indie rock 1978–today blend · Nov 27, 2026</div>
 </div>
 
 <script src="year.js"></script>
@@ -183,7 +183,7 @@ const LIGHTNING = 2;       // verified correct under 2s = ⚡
 const STATIONS = [
   ['60s', '60s hits'], ['70s', '70s hits'], ['80s', '80s hits'], ['90s', '90s hits'],
   ['2000s', '2000s hits'], ['2010s', '2010s hits'], ['Classic rock', 'classic rock'],
-  ['Indie rock', 'indie rock'], ['Today’s chart', '__chart']
+  ['Indie rock', '__indie'], ['Today’s chart', '__chart']
 ];
 
 let tracks = [], idx = 0, stationName = '';
@@ -218,6 +218,35 @@ function shuffle(a) {
   return a;
 }
 
+// Indie rock, 1978 to today: a blend of hand-picked Deezer playlists, roughly one or two
+// per era, mostly by Deezer's own alternative editor. Each one contributes up to 40
+// random songs, so the 324-song "Best Indie Hits" can't drown out the 50-song decade lists.
+const INDIE_BLEND = [
+  [8700369282,  'Post-Punk Essentials (late 70s–80s)'],
+  [1276784581,  '80s Alternative'],
+  [1890853682,  '90s Indie (Filtr UK)'],
+  [5337198442,  '90s Alternative'],
+  [8929584182,  '00s Indie Rock'],
+  [12355395263, 'Indie classics, 00s (Digster)'],
+  [6200785264,  '10s Alternative'],
+  [8716319082,  'Indie Rock Essentials (all-time)'],
+  [760160361,   'Indie Rock Now'],
+  [4786756328,  'Best Indie Hits, 00s–today'],
+];
+const PER_PLAYLIST = 40;
+async function loadBlend(ids) {
+  const lists = await Promise.all(ids.map(([id]) =>
+    jsonp('https://api.deezer.com/playlist/' + id + '/tracks?limit=200').then(d => d.data || []).catch(() => [])));
+  const seen = new Set(), out = [];
+  for (const list of lists) {
+    for (const t of shuffle(list.slice()).slice(0, PER_PLAYLIST)) {
+      const key = (t.artist ? t.artist.name : '') + '|' + RadioYear.cleanTitle(t.title).toLowerCase();
+      if (!seen.has(key)) { seen.add(key); out.push(t); }   // same song on two playlists counts once
+    }
+  }
+  if (!out.length) throw new Error('couldn’t reach the indie playlists');
+  return out;
+}
 const MIN_ARTISTS = 20;
 const artistCount = list => new Set((list || []).map(t => t.artist && t.artist.name)).size;
 function capPerArtist(list, max) {
@@ -232,6 +261,8 @@ async function loadStation(label, q) {
     let list;
     if (q === '__chart') {
       list = (await jsonp('https://api.deezer.com/chart/0/tracks?limit=100')).data;
+    } else if (q === '__indie') {
+      list = await loadBlend(INDIE_BLEND);
     } else {
       const p = await jsonp('https://api.deezer.com/search/playlist?q=' + encodeURIComponent(q) + '&limit=25');
       if (!p.data || !p.data.length) throw new Error('no playlists found for “' + q + '”');
@@ -757,10 +788,11 @@ buildScale();
 buildStations();
 setState('idle');
 // Start on the last station you used on this device; Indie rock the first time.
-let startStation = ['Indie rock', 'indie rock'];
+let startStation = ['Indie rock', '__indie'];
 try {
   const saved = JSON.parse(localStorage.getItem('radioGameStation'));
   if (Array.isArray(saved) && saved.length === 2 && saved.every(x => typeof x === 'string')) startStation = saved;
+  if (startStation[0] === 'Indie rock') startStation = ['Indie rock', '__indie']; // upgrade the old search-based version
 } catch (e) {}
 loadStation(...startStation);
 </script>
