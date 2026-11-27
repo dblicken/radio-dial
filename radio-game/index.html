@@ -156,7 +156,7 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
 
   <div class="hint">Tap “Name it” if you know it, then pick fast.<br>
   Faster = more points · a wrong pick costs 500 · under 2s = ⚡<br>
-  v2.3 · starts on Indie rock · Nov 27, 2026</div>
+  v2.4 · remembers your station · Nov 27, 2026</div>
 </div>
 
 <script src="year.js"></script>
@@ -254,6 +254,7 @@ async function loadStation(label, q) {
     if (fresh.length < ROUND_LEN + CHOICES) throw new Error('not enough playable songs — try another station');
     tracks = fresh; idx = 0; stationName = label;
     stationQ = [label, q]; loadedAt = Date.now();
+    try { localStorage.setItem('radioGameStation', JSON.stringify(stationQ)); } catch (e) {} // remember for next visit
     pauseAll(); nextPrep = null; current = null;
     status(label + ' · ' + tracks.length + ' songs');
     document.querySelectorAll('.chip').forEach(c => c.classList.toggle('sel', c.dataset.label === label));
@@ -755,7 +756,13 @@ setRunLength(nextLen);
 buildScale();
 buildStations();
 setState('idle');
-loadStation('Indie rock', 'indie rock'); // default station
+// Start on the last station you used on this device; Indie rock the first time.
+let startStation = ['Indie rock', 'indie rock'];
+try {
+  const saved = JSON.parse(localStorage.getItem('radioGameStation'));
+  if (Array.isArray(saved) && saved.length === 2 && saved.every(x => typeof x === 'string')) startStation = saved;
+} catch (e) {}
+loadStation(...startStation);
 </script>
 </body>
 </html>
