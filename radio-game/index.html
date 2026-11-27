@@ -131,7 +131,8 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
       <div class="list" id="sList"></div>
       <div class="row" style="justify-content:center">
         <button id="copy">Copy result</button>
-        <button class="big" id="again" style="flex:none;min-width:0;font-size:16px;padding:12px 18px">Play again</button>
+        <button id="change">Change station</button>
+        <button class="big" id="again" style="flex:none;min-width:0;font-size:16px;padding:12px 18px">Same station again</button>
       </div>
     </div>
 
@@ -142,7 +143,7 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
     </div>
   </div>
 
-  <h3>Songs per run</h3>
+  <h3 id="setup">Songs per run</h3>
   <div class="stations"><button class="len" data-n="5">5 songs</button><button class="len" data-n="10">10 songs</button></div>
   <h3>Station</h3>
   <div class="stations" id="stations"></div>
@@ -154,7 +155,7 @@ input[type=text]{flex:1;min-width:0;padding:10px;border-radius:10px;border:1px s
 
   <div class="hint">Tap “Name it” if you know it, then pick fast.<br>
   Faster = more points · a wrong pick costs 500 · under 2s = ⚡<br>
-  v1.5 · clock starts with real sound · Nov 26, 2026</div>
+  v1.6 · change station between runs · Nov 27, 2026</div>
 </div>
 
 <script src="year.js"></script>
@@ -554,6 +555,7 @@ async function startRound() {
     if (!tracks.length) return;
   }
   ROUND_LEN = nextLen; $('roundLen').textContent = ROUND_LEN;
+  setMsg('');
   resetRound();
   $('dial').classList.add('on');
   nextSong();
@@ -609,7 +611,7 @@ function setState(s) {
     answering: ['Pick fast ↓', true, ''],
     revealed: ['Next station ▶', false, ''],
     lastReveal: ['See results ▶', false, ''],
-    done: ['▶ Play again', false, '']
+    done: ['▶ Same station again', false, '']
   };
   const [text, dis, cls] = labels[s];
   m.textContent = text; m.disabled = dis || !tracks.length;
@@ -678,7 +680,9 @@ function buildStations() {
   STATIONS.forEach(([label, q]) => {
     const b = document.createElement('button');
     b.className = 'chip'; b.textContent = label; b.dataset.label = label;
-    b.onclick = () => loadStation(label, q);
+    b.onclick = () => loadStation(label, q).then(() => {
+      if (state === 'idle' && tracks.length) $('main').scrollIntoView({ block: 'center', behavior: 'smooth' });
+    });
     $('stations').appendChild(b);
   });
 }
@@ -686,6 +690,13 @@ function buildStations() {
 $('main').onclick = mainAction;
 $('replay').onclick = replay;
 $('again').onclick = startRound;
+// End of a run: park the radio and take you to the station list instead of starting right away.
+$('change').onclick = () => {
+  resetRound(); setState('idle');
+  status(stationName + ' · ' + tracks.length + ' songs');
+  setMsg('Pick a station (and run length), then Power on.');
+  $('setup').scrollIntoView({ block: 'start', behavior: 'smooth' });
+};
 $('copy').onclick = () => {
   navigator.clipboard.writeText(shareText())
     .then(() => { $('copy').textContent = 'Copied ✓'; setTimeout(() => $('copy').textContent = 'Copy result', 1500); })
